@@ -1,250 +1,172 @@
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Link2, Image, MoreVertical, ImageIcon, Video, Table2, Mic, Download, Share2, User, Cloud, Check } from 'lucide-react';
-import { useState } from 'react';
+import {
+  Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
+  Download, Sparkles, FileText,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Avatar, AvatarFallback } from './ui/avatar';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
+import { SAMPLE_DRAFT } from '../lib/samples';
 
-interface GoogleDocMockProps {
-  state: 'upload' | 'checklist' | 'progress';
+interface Props {
+  draft: string;
+  onDraftChange: (text: string) => void;
+  words: number;
+  citations: number;
 }
 
-export function GoogleDocMock({ state }: GoogleDocMockProps) {
-  const [listening, setListening] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [spacingOpen, setSpacingOpen] = useState(false);
-  const [spacing, setSpacing] = useState([1.0]);
+/**
+ * The original was a picture of Google Docs with grey bars where the text
+ * should be. This is the same chrome with a real editor under it.
+ *
+ * It is contenteditable rather than a textarea for one reason: it lets the
+ * toolbar buttons actually do something. Every control left in the toolbar
+ * works -- the ones that could only have been decorative were removed instead
+ * of being left there to be clicked and do nothing.
+ */
+export function GoogleDocMock({ draft, onDraftChange, words, citations }: Props) {
+  const editor = useRef<HTMLDivElement>(null);
+  const [title, setTitle] = useState('Untitled document');
+  const [spacing, setSpacing] = useState([1.5]);
+
+  // Only write into the DOM when the text differs, or every keystroke would
+  // reset the caret to the start of the document.
+  useEffect(() => {
+    const el = editor.current;
+    if (el && el.innerText !== draft) el.innerText = draft;
+  }, [draft]);
+
+  const exec = (command: string) => {
+    editor.current?.focus();
+    document.execCommand(command);
+    if (editor.current) onDraftChange(editor.current.innerText);
+  };
+
+  const download = (extension: 'txt' | 'md') => {
+    const blob = new Blob([draft], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title.replace(/[^\w\s-]/g, '').trim() || 'document'}.${extension}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toolbarButton = 'p-1.5 hover:bg-gray-100 rounded';
 
   return (
-    <div className="flex-1 bg-[#F1F3F4] p-8">
+    <div className="flex-1 bg-[#F1F3F4] p-8 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-sm max-w-[720px] mx-auto">
         {/* Google Docs Toolbar */}
-        <div className="border-b border-gray-200 px-4 py-2">
+        <div className="border-b border-gray-200 px-4 py-2 sticky top-0 bg-white z-10 rounded-t-lg">
           <div className="flex items-center gap-1 mb-2">
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-sm text-[#202124]">Untitled document</span>
-            </div>
-            
-            {/* Top Right Actions */}
-            <div className="flex items-center gap-2">
-              {/* Auto-save Indicator */}
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-sm text-[#202124] bg-transparent border border-transparent hover:border-gray-200 focus:border-[#4285F4] rounded px-1.5 py-0.5 outline-none flex-1 max-w-[280px]"
+              aria-label="Document title"
+            />
+
+            <div className="flex items-center gap-2 ml-auto">
               <div className="flex items-center gap-1.5 text-xs text-[#5f6368] mr-2">
-                <Cloud className="w-3.5 h-3.5 text-[#34A853]" />
-                <span>All changes saved</span>
+                <FileText className="w-3.5 h-3.5 text-[#34A853]" />
+                <span>
+                  {words.toLocaleString()} {words === 1 ? 'word' : 'words'}
+                  {citations > 0 && ` · ${citations} ${citations === 1 ? 'source' : 'sources'}`}
+                </span>
               </div>
-              
-              {/* Collaborator Avatars */}
-              <div className="flex items-center -space-x-2 mr-2">
-                <Avatar className="w-7 h-7 border-2 border-white">
-                  <AvatarFallback className="bg-blue-500 text-white text-xs">JD</AvatarFallback>
-                </Avatar>
-                <Avatar className="w-7 h-7 border-2 border-white">
-                  <AvatarFallback className="bg-green-500 text-white text-xs">SK</AvatarFallback>
-                </Avatar>
-              </div>
-              
-              {/* Share Button */}
-              <Button 
-                onClick={() => setShareOpen(true)}
-                size="sm" 
-                className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full h-8 px-4"
+
+              <Button
+                onClick={() => onDraftChange(SAMPLE_DRAFT)}
+                size="sm"
+                variant="outline"
+                className="rounded-full h-8 px-4 border-gray-300"
               >
-                <Share2 className="w-3.5 h-3.5 mr-1.5" />
-                Share
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Sample essay
               </Button>
-              
-              {/* Export Dropdown */}
+
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-gray-300 bg-background px-4 h-8 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
                   <Download className="w-3.5 h-3.5" />
                   Export
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => download('txt')}>
                     <Download className="w-4 h-4 mr-2" />
-                    PDF
+                    Plain text
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => download('md')}>
                     <Download className="w-4 h-4 mr-2" />
-                    DOCX
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Download className="w-4 h-4 mr-2" />
-                    TXT
+                    Markdown
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
-              <button className="p-2 hover:bg-gray-100 rounded">
-                <MoreVertical className="w-4 h-4 text-[#5f6368]" />
-              </button>
             </div>
           </div>
-          
+
           {/* Toolbar */}
           <div className="flex items-center gap-1">
-            {/* Speak to Write */}
-            <button 
-              onClick={() => setListening(!listening)}
-              className={`p-1.5 hover:bg-gray-100 rounded relative ${listening ? 'bg-red-50' : ''}`}
-            >
-              <Mic className={`w-4 h-4 ${listening ? 'text-red-500' : 'text-[#5f6368]'}`} />
-              {listening && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              )}
-            </button>
-            {listening && (
-              <span className="text-xs text-red-500 mr-2 animate-pulse">Listening...</span>
-            )}
-            
-            <div className="w-px h-6 bg-gray-200 mx-2" />
-            
-            <button className="p-1.5 hover:bg-gray-100 rounded">
+            <button className={toolbarButton} onClick={() => exec('bold')} title="Bold">
               <Bold className="w-4 h-4 text-[#5f6368]" />
             </button>
-            <button className="p-1.5 hover:bg-gray-100 rounded">
+            <button className={toolbarButton} onClick={() => exec('italic')} title="Italic">
               <Italic className="w-4 h-4 text-[#5f6368]" />
             </button>
-            <button className="p-1.5 hover:bg-gray-100 rounded">
+            <button className={toolbarButton} onClick={() => exec('underline')} title="Underline">
               <Underline className="w-4 h-4 text-[#5f6368]" />
             </button>
+
             <div className="w-px h-6 bg-gray-200 mx-2" />
-            <button className="p-1.5 hover:bg-gray-100 rounded">
+
+            <button className={toolbarButton} onClick={() => exec('justifyLeft')} title="Align left">
               <AlignLeft className="w-4 h-4 text-[#5f6368]" />
             </button>
-            <button className="p-1.5 hover:bg-gray-100 rounded">
+            <button className={toolbarButton} onClick={() => exec('justifyCenter')} title="Align centre">
               <AlignCenter className="w-4 h-4 text-[#5f6368]" />
             </button>
-            <button className="p-1.5 hover:bg-gray-100 rounded">
+            <button className={toolbarButton} onClick={() => exec('justifyRight')} title="Align right">
               <AlignRight className="w-4 h-4 text-[#5f6368]" />
             </button>
+
             <div className="w-px h-6 bg-gray-200 mx-2" />
-            <button className="p-1.5 hover:bg-gray-100 rounded">
-              <Link2 className="w-4 h-4 text-[#5f6368]" />
-            </button>
-            
-            {/* Media Tools */}
-            <button className="p-1.5 hover:bg-gray-100 rounded" title="Insert Image">
-              <ImageIcon className="w-4 h-4 text-[#5f6368]" />
-            </button>
-            <button className="p-1.5 hover:bg-gray-100 rounded" title="Insert Video">
-              <Video className="w-4 h-4 text-[#5f6368]" />
-            </button>
-            <button className="p-1.5 hover:bg-gray-100 rounded" title="Insert Table">
-              <Table2 className="w-4 h-4 text-[#5f6368]" />
-            </button>
-            
-            <div className="w-px h-6 bg-gray-200 mx-2" />
-            
-            {/* Spacing & Margins */}
-            <DropdownMenu open={spacingOpen} onOpenChange={setSpacingOpen}>
+
+            <DropdownMenu>
               <DropdownMenuTrigger className="text-xs px-2 py-1 hover:bg-gray-100 rounded text-[#5f6368]">
                 Spacing
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64 p-4">
-                <Label className="text-xs text-[#5f6368] mb-2 block">Paragraph Spacing</Label>
+                <Label className="text-xs text-[#5f6368] mb-2 block">Line spacing</Label>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#5f6368]">0.8x</span>
+                  <span className="text-xs text-[#5f6368]">1.0x</span>
                   <Slider
                     value={spacing}
                     onValueChange={setSpacing}
-                    min={0.8}
-                    max={2.0}
+                    min={1.0}
+                    max={2.5}
                     step={0.1}
                     className="flex-1"
                   />
-                  <span className="text-xs text-[#5f6368]">2.0x</span>
+                  <span className="text-xs text-[#5f6368]">2.5x</span>
                 </div>
-                <div className="text-xs text-[#202124] mt-2 text-center">
-                  {spacing[0].toFixed(1)}x
-                </div>
+                <div className="text-xs text-[#202124] mt-2 text-center">{spacing[0].toFixed(1)}x</div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-        
-        {/* Share Dialog */}
-        <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Share with others</DialogTitle>
-              <DialogDescription>
-                Anyone with the link can view this document
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm mb-2 block">Add people</Label>
-                <Input placeholder="Enter email addresses..." className="mb-2" />
-              </div>
-              <div>
-                <Label className="text-sm mb-2 block">Get link</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    value="https://docs.google.com/document/d/abc123..." 
-                    readOnly 
-                    className="bg-[#F1F3F4]"
-                  />
-                  <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white">
-                    Copy
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
-        {/* Document Content */}
-        <div className="p-16 min-h-[800px]">
-          {state === 'upload' && (
-            <div className="text-[#5f6368]">
-              <div className="h-4 w-32 bg-gray-200 rounded mb-4" />
-              <div className="h-3 w-full bg-gray-100 rounded mb-2" />
-              <div className="h-3 w-full bg-gray-100 rounded mb-2" />
-              <div className="h-3 w-4/5 bg-gray-100 rounded mb-6" />
-              
-              <div className="h-3 w-full bg-gray-100 rounded mb-2" />
-              <div className="h-3 w-full bg-gray-100 rounded mb-2" />
-              <div className="h-3 w-3/4 bg-gray-100 rounded mb-6" />
-            </div>
-          )}
-
-          {state === 'checklist' && (
-            <div>
-              <h1 className="text-[#202124] mb-4">The Impact of Climate Change on Global Agriculture</h1>
-              <p className="text-[#5f6368] leading-relaxed mb-4">
-                Climate change represents one of the most significant challenges facing global agriculture in the 21st century. This essay examines the multifaceted impacts of rising temperatures and changing precipitation patterns on food production systems worldwide.
-              </p>
-              <p className="text-[#5f6368] leading-relaxed mb-4">
-                Agricultural systems are inherently vulnerable to climate variability, and recent decades have witnessed unprecedented changes in weather patterns. From prolonged droughts in sub-Saharan Africa to flooding in South Asia...
-              </p>
-              <p className="text-[#5f6368] leading-relaxed">
-                According to Smith et al. (2023), crop yields have declined by an average of 15% in regions experiencing temperature increases...
-              </p>
-            </div>
-          )}
-
-          {state === 'progress' && (
-            <div>
-              <h1 className="text-[#202124] mb-4">The Impact of Climate Change on Global Agriculture</h1>
-              <p className="text-[#5f6368] leading-relaxed mb-4">
-                Climate change represents one of the most significant challenges facing global agriculture in the 21st century. This essay examines the multifaceted impacts of rising temperatures and changing precipitation patterns on food production systems worldwide, with particular attention to developing nations most vulnerable to environmental disruption.
-              </p>
-              <p className="text-[#5f6368] leading-relaxed mb-4">
-                Agricultural systems are inherently vulnerable to climate variability, and recent decades have witnessed unprecedented changes in weather patterns. From prolonged droughts in sub-Saharan Africa to flooding in South Asia, farmers worldwide face increasingly unpredictable growing conditions that threaten food security.
-              </p>
-              <p className="text-[#5f6368] leading-relaxed mb-4">
-                According to Smith et al. (2023), crop yields have declined by an average of 15% in regions experiencing temperature increases above 2°C. Similarly, Johnson and Martinez (2022) documented significant shifts in agricultural zones, with traditional growing regions becoming less suitable for staple crops. Brown (2024) further emphasizes the economic impact, noting that developing economies dependent on agriculture face disproportionate challenges.
-              </p>
-              <p className="text-[#5f6368] leading-relaxed">
-                The evidence clearly demonstrates that immediate action is required to develop climate-resilient agricultural practices and support vulnerable farming communities in adapting to our changing environment.
-              </p>
-            </div>
-          )}
-        </div>
+        {/* The page */}
+        <div
+          ref={editor}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(e) => onDraftChange(e.currentTarget.innerText)}
+          data-placeholder="Start writing your assignment here, or load the sample essay above."
+          style={{ lineHeight: spacing[0] }}
+          className="p-16 min-h-[760px] outline-none text-[#202124] whitespace-pre-wrap
+                     empty:before:content-[attr(data-placeholder)] empty:before:text-[#9aa0a6]"
+        />
       </div>
     </div>
   );

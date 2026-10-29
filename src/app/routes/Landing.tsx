@@ -193,8 +193,15 @@ export function Landing() {
           <p>
             Rubric files are turned into text in the browser before anything is sent, so a
             ten megabyte PDF never crosses the wire and the functions stay small and
-            JSON-only. The model is Claude Opus 5.5, called twice: once to read the rubric
-            into a checklist, once to mark the draft against it.
+            JSON-only.
+          </p>
+          <p>
+            Each route runs on the cheapest model that does its job, which was settled by
+            measurement rather than by guessing. Reading a rubric and answering a question
+            came out the same on Haiku as on Opus, so both run on Haiku. Marking a draft
+            did not: the sample essay ends without a conclusion on purpose, and only the
+            larger models noticed. That one runs on Sonnet, which catches it for a quarter
+            of the price. The mix costs about 2c a session instead of 8c.
           </p>
         </div>
 

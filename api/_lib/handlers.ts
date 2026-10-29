@@ -4,7 +4,24 @@ import { ExtractSchema, CheckSchema } from '../../src/app/lib/schema';
 import type { Criterion, ChatMessage } from '../../src/app/lib/types';
 import { LIMITS } from './limits';
 
-const MODEL = 'claude-opus-5-5';
+/**
+ * One model per route, because the three jobs are not the same job.
+ *
+ * Measured on the sample rubric and essay, all three models pulled out the
+ * same five criteria with the same weights and the same measurable rules, and
+ * answered chat questions equally well -- so those two routes run on Haiku.
+ *
+ * Checking a draft is the one that needs judgement. The sample essay ends
+ * without a conclusion on purpose; Opus and Sonnet both caught it, Haiku
+ * called the structure done. Sonnet matches Opus on the call that matters at
+ * a quarter of the price, so it marks the drafts.
+ *
+ * Each is overridable, so the mix can be retuned from Vercel's environment
+ * variables without a deploy.
+ */
+const EXTRACT_MODEL = process.env.EXTRACT_MODEL ?? 'claude-haiku-5-5';
+const CHECK_MODEL = process.env.CHECK_MODEL ?? 'claude-sonnet-5-5';
+const CHAT_MODEL = process.env.CHAT_MODEL ?? 'claude-haiku-5-5';
 
 let client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -19,6 +36,28 @@ function getClient(): Anthropic {
 
 class ConfigError extends Error {}
 export class BadInput extends Error {}
+
+/** Per-million-token prices, for the cost line in the log. */
+const PRICES: Record<string, { in: number; out: number }> = {
+  'claude-opus-5-5': { in: 4, out: 20 },
+  'claude-sonnet-5-5': { in: 2, out: 10 },
+  'claude-haiku-5-5': { in: 0.1, out: 0.5 },
+};
+
+/**
+ * One line per call saying what it cost. On a public demo paid for out of one
+ * pocket, that number should be visible in the logs rather than discovered on
+ * a bill.
+ */
+function logUsage(route: string, model: string, usage: Anthropic.Usage) {
+  const price = PRICES[model];
+  const cents = price
+    ? ((usage.input_tokens * price.in + usage.output_tokens * price.out) / 1_000_000) * 100
+    : 0;
+  console.log(
+    `[rubricmate] ${route} model=${model} in=${usage.input_tokens} out=${usage.output_tokens} cost=${cents.toFixed(3)}c`,
+  );
+}
 
 export interface HandlerResult {
   status: number;
@@ -117,13 +156,15 @@ export async function handleExtract(body: any): Promise<HandlerResult> {
   const rubric = clean(body?.rubric, LIMITS.rubricChars, 'The rubric');
 
   const response = await getClient().messages.parse({
-    model: MODEL,
+    model: EXTRACT_MODEL,
     max_tokens: 4000,
     // Pulling fields out of a document is a reading task, not a reasoning one.
     output_config: { effort: 'low', format: zodOutputFormat(ExtractSchema) },
     system: EXTRACT_SYSTEM,
     messages: [{ role: 'user', content: `Here is the rubric:\n\n${rubric}` }],
   });
+
+  logUsage('extract', EXTRACT_MODEL, response.usage);
 
   const parsed = response.parsed_output;
   if (!parsed) throw new Error('The model did not return a usable checklist.');
@@ -156,7 +197,7 @@ export async function handleCheck(body: any): Promise<HandlerResult> {
     .join('\n');
 
   const response = await getClient().messages.parse({
-    model: MODEL,
+    model: CHECK_MODEL,
     max_tokens: 6000,
     output_config: { effort: 'medium', format: zodOutputFormat(CheckSchema) },
     system: CHECK_SYSTEM,
@@ -167,6 +208,8 @@ export async function handleCheck(body: any): Promise<HandlerResult> {
       },
     ],
   });
+
+  logUsage('check', CHECK_MODEL, response.usage);
 
   const parsed = response.parsed_output;
   if (!parsed) throw new Error('The model did not return a usable result.');
@@ -203,7 +246,7 @@ export async function handleChat(body: any): Promise<HandlerResult> {
   }\n"""`;
 
   const response = await getClient().messages.create({
-    model: MODEL,
+    model: CHAT_MODEL,
     max_tokens: 1200,
     output_config: { effort: 'low' },
     system: [
@@ -216,6 +259,8 @@ export async function handleChat(body: any): Promise<HandlerResult> {
       { role: 'user' as const, content: question },
     ],
   });
+
+  logUsage('chat', CHAT_MODEL, response.usage);
 
   if (response.stop_reason === 'refusal') {
     return { status: 200, body: { answer: "I can't help with that one. Try asking about your rubric or your draft." } };

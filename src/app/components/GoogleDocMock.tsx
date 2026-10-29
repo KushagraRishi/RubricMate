@@ -37,6 +37,21 @@ export function GoogleDocMock({ draft, onDraftChange, words, citations }: Props)
     if (el && el.innerText !== draft) el.innerText = draft;
   }, [draft]);
 
+  /**
+   * A contenteditable pastes whatever the clipboard holds, markup and all. Copy
+   * a paragraph out of a Word document or a web page and the inline background
+   * and colour come with it, which is how a pasted draft ends up as blocks of
+   * blue you cannot read. Only the text is wanted here, so only the text is
+   * taken. insertText goes through the undo stack, so ctrl-Z still works.
+   */
+  const paste = (event: React.ClipboardEvent) => {
+    event.preventDefault();
+    const text = event.clipboardData.getData('text/plain');
+    if (!text) return;
+    document.execCommand('insertText', false, text);
+    if (editor.current) onDraftChange(editor.current.innerText);
+  };
+
   const exec = (command: string) => {
     editor.current?.focus();
     document.execCommand(command);
@@ -162,6 +177,7 @@ export function GoogleDocMock({ draft, onDraftChange, words, citations }: Props)
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => onDraftChange(e.currentTarget.innerText)}
+          onPaste={paste}
           data-placeholder="Start writing your assignment here, or load the sample essay above."
           style={{ lineHeight: spacing[0] }}
           className="p-16 min-h-[760px] outline-none text-[#202124] whitespace-pre-wrap

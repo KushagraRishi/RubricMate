@@ -5,7 +5,11 @@ Turn an assignment rubric into a checklist you can tick off.
 Load the rubric for your assignment, write your draft, and RubricMate tells you
 which requirements you have met, which are half done, and what to fix next.
 
-**Live demo:** _(add the Vercel URL once deployed)_
+**Live demo:** https://rubric-mate.vercel.app
+
+> Deployment-specific URLs like `rubric-mate-<hash>.vercel.app` are pinned to
+> the build that created them and never pick up later environment variables or
+> code. Use the project domain above.
 
 ## How it works
 

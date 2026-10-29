@@ -10,7 +10,7 @@ import { useRubricMate } from '../lib/useRubricMate';
 const STEP_LABEL = {
   upload: 'Load a rubric to start',
   checklist: 'Write, then check your draft',
-  progress: 'Keep writing. Counts update live',
+  progress: 'Looking good. Keep going',
 } as const;
 
 /**
@@ -64,12 +64,7 @@ export function Demo() {
       </header>
 
       <div className="flex-1 max-w-[1440px] w-full mx-auto flex relative min-h-0">
-        <GoogleDocMock
-          draft={rm.draft}
-          onDraftChange={rm.setDraft}
-          words={rm.words}
-          citations={rm.citations}
-        />
+        <GoogleDocMock draft={rm.draft} onDraftChange={rm.setDraft} />
 
         <RubricMateSidebar
           step={rm.step}

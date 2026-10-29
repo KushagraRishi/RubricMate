@@ -1,8 +1,9 @@
-import { Brain, Send, Loader2 } from 'lucide-react';
+import { Brain, Send, Loader2, SquarePen } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from './ui/sheet';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage, Criterion } from '../lib/types';
 import { askQuestion, ApiFailure } from '../lib/api';
@@ -28,6 +29,10 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
+  // Counts how many threads we have started. A reply holds the number it was
+  // asked under, so a reply that lands after a reset can tell it belongs to a
+  // thread the reader has thrown away.
+  const thread = useRef(0);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -37,6 +42,7 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
     const question = text.trim();
     if (!question || sending) return;
 
+    const asked = thread.current;
     const history = messages;
     setMessages([...history, { role: 'user', content: question }]);
     setInput('');
@@ -44,8 +50,10 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
 
     try {
       const { answer } = await askQuestion(question, draft, criteria, history);
+      if (thread.current !== asked) return;
       setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
     } catch (err) {
+      if (thread.current !== asked) return;
       setMessages((prev) => [
         ...prev,
         {
@@ -56,6 +64,15 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
     } finally {
       setSending(false);
     }
+  };
+
+  // The button is disabled while sending, but disabling is a render away and
+  // the appends above add to whatever is in state at the time, so a reply could
+  // still graft itself onto an emptied thread. Bumping the count closes that.
+  const newChat = () => {
+    thread.current += 1;
+    setMessages([]);
+    setInput('');
   };
 
   return (
@@ -74,6 +91,23 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
                 </SheetDescription>
               </div>
             </div>
+            {messages.length > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={newChat}
+                      disabled={sending}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                      aria-label="New chat"
+                    >
+                      <SquarePen className="w-4 h-4 text-[#5f6368]" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent><p className="text-xs">New chat</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </SheetHeader>
 

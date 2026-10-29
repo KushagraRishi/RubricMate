@@ -149,6 +149,10 @@ export function Landing() {
         lede="The sample essay ends without a conclusion on purpose. Haiku called the structure done; Sonnet and Opus caught it. So Sonnet marks drafts, and Haiku does the two jobs where all three scored the same."
       >
         <CostChart />
+        <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
+          It is being tested with professors as well, so the marking lines up with how
+          someone who sets a rubric actually reads against it.
+        </p>
       </Section>
 
       <Section title="What it does not do">

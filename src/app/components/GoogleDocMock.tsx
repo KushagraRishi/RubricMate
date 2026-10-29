@@ -8,12 +8,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
+import { FileText as FileCount } from 'lucide-react';
 import { SAMPLE_DRAFT } from '../lib/samples';
 import { exportPdf, exportWordDoc, exportPlainText } from '../lib/exportDoc';
 
 interface Props {
   draft: string;
   onDraftChange: (text: string) => void;
+  /**
+   * Set only when the checklist is not already counting words. A rubric that
+   * asks for a word count gets one in the sidebar against its target, which is
+   * the more useful number; this is the fallback for rubrics that do not.
+   */
+  count: string | null;
 }
 
 /** Fonts people actually ask for by name, in the order they look for them. */
@@ -42,7 +49,7 @@ const HIGHLIGHTS = [
  * Every control left in the toolbar works; the ones that could only ever have
  * been decorative were removed rather than left there to be clicked.
  */
-export function GoogleDocMock({ draft, onDraftChange }: Props) {
+export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
   const editor = useRef<HTMLDivElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('Untitled document');
@@ -158,6 +165,13 @@ export function GoogleDocMock({ draft, onDraftChange }: Props) {
             />
 
             <div className="flex items-center gap-2 ml-auto">
+              {count && (
+                <span className="flex items-center gap-1.5 text-xs text-[#5f6368] mr-1">
+                  <FileCount className="w-3.5 h-3.5 text-[#34A853]" />
+                  {count}
+                </span>
+              )}
+
               <Button
                 onClick={() => onDraftChange(SAMPLE_DRAFT)}
                 size="sm"

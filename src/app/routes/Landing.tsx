@@ -201,7 +201,15 @@ export function Landing() {
             came out the same on Haiku as on Opus, so both run on Haiku. Marking a draft
             did not: the sample essay ends without a conclusion on purpose, and only the
             larger models noticed. That one runs on Sonnet, which catches it for a quarter
-            of the price. The mix costs about 2c a session instead of 8c.
+            of the price.
+          </p>
+          <p>
+            Two more things came out of measuring rather than assuming. The fixed part of
+            each prompt is cached, so a second check pays a tenth of the price on it. And
+            reasoning is turned off for reading a rubric, where it halved the output and
+            made the result <em>more</em> consistent, but left on for marking, where it is
+            the same price either way and worth having. Together: about 1.6c a session,
+            down from 8.3c, with the same answers on every test.
           </p>
         </div>
 

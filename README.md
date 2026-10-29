@@ -21,10 +21,27 @@ Models were picked by running the same rubric and essay through all three.
 Extraction and chat came out identical on Haiku, so they run on Haiku.
 Marking a draft did not — the sample essay ends without a conclusion on
 purpose, and Haiku called the structure done where Sonnet and Opus both
-caught it. About 2c per session instead of 8c on Opus throughout.
+caught it, even at high effort.
 
-Override any of them with the `EXTRACT_MODEL`, `CHECK_MODEL` and `CHAT_MODEL`
-environment variables; no code change needed.
+Two further things, also measured:
+
+- **The fixed part of each prompt is cached.** A repeat check pays a tenth of
+  the input price on it. Chat's prompt is under the 512-token minimum, so it
+  does not cache — the marker is there and simply never fires.
+- **Reasoning is off for extraction, on for checking.** Off halved extraction's
+  output tokens and made the criteria list more consistent. On the check it
+  measured the same price either way over repeated runs, so it stays on as a
+  margin for inputs harder than the sample.
+
+**About 1.6c per session** (one extract, two checks, two chats), down from
+8.3c on Opus throughout, with identical results on every test.
+
+Override any of it without a code change:
+`EXTRACT_MODEL`, `CHECK_MODEL`, `CHAT_MODEL`,
+`EXTRACT_EFFORT`, `CHECK_EFFORT`, `CHAT_EFFORT`,
+`EXTRACT_THINKING`, `CHECK_THINKING`, `CHAT_THINKING` (`off` to disable).
+
+Every call logs its model, tokens, cache hits and cost to the function log.
 
 Both of the first two use structured outputs with a Zod schema, so the response
 is validated against that schema before it arrives. The same schema file types

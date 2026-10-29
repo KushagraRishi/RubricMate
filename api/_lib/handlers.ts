@@ -23,6 +23,34 @@ const EXTRACT_MODEL = process.env.EXTRACT_MODEL ?? 'claude-haiku-5-5';
 const CHECK_MODEL = process.env.CHECK_MODEL ?? 'claude-sonnet-5-5';
 const CHAT_MODEL = process.env.CHAT_MODEL ?? 'claude-haiku-5-5';
 
+type Effort = 'low' | 'medium' | 'high';
+const EXTRACT_EFFORT = (process.env.EXTRACT_EFFORT ?? 'low') as Effort;
+const CHECK_EFFORT = (process.env.CHECK_EFFORT ?? 'medium') as Effort;
+const CHAT_EFFORT = (process.env.CHAT_EFFORT ?? 'low') as Effort;
+
+/**
+ * Haiku takes `disabled`; Sonnet 5.5 rejects it and wants `between_tools`
+ * instead. Both are only accepted at effort `high` or below, which every
+ * route here is.
+ */
+const noThinking = (model: string) =>
+  model.includes('sonnet')
+    ? ({ type: 'between_tools' } as const)
+    : ({ type: 'disabled' } as const);
+
+/**
+ * Off for extraction: measured over repeated runs it halved the output tokens
+ * and made the criteria list *more* consistent, because pulling fields out of
+ * a document is not a reasoning problem.
+ *
+ * On for checking and chat: measured at the same price either way, and on the
+ * route that has to notice a missing conclusion, reasoning is a free safety
+ * margin on inputs harder than the sample.
+ */
+const EXTRACT_THINKING = (process.env.EXTRACT_THINKING ?? 'off') === 'off';
+const CHECK_THINKING = (process.env.CHECK_THINKING ?? 'on') === 'off';
+const CHAT_THINKING = (process.env.CHAT_THINKING ?? 'on') === 'off';
+
 let client: Anthropic | null = null;
 function getClient(): Anthropic {
   if (!client) {
@@ -51,11 +79,23 @@ const PRICES: Record<string, { in: number; out: number }> = {
  */
 function logUsage(route: string, model: string, usage: Anthropic.Usage) {
   const price = PRICES[model];
+  const write = usage.cache_creation_input_tokens ?? 0;
+  const read = usage.cache_read_input_tokens ?? 0;
+
+  // Cache writes bill at 1.25x input, reads at 0.1x. Counting them as free
+  // would make every cached call look cheaper than it is.
   const cents = price
-    ? ((usage.input_tokens * price.in + usage.output_tokens * price.out) / 1_000_000) * 100
+    ? ((usage.input_tokens * price.in +
+        write * price.in * 1.25 +
+        read * price.in * 0.1 +
+        usage.output_tokens * price.out) /
+        1_000_000) *
+      100
     : 0;
+
+  const cache = write || read ? ` cacheW=${write} cacheR=${read}` : '';
   console.log(
-    `[rubricmate] ${route} model=${model} in=${usage.input_tokens} out=${usage.output_tokens} cost=${cents.toFixed(3)}c`,
+    `[rubricmate] ${route} model=${model} in=${usage.input_tokens} out=${usage.output_tokens}${cache} cost=${cents.toFixed(3)}c`,
   );
 }
 
@@ -159,8 +199,9 @@ export async function handleExtract(body: any): Promise<HandlerResult> {
     model: EXTRACT_MODEL,
     max_tokens: 4000,
     // Pulling fields out of a document is a reading task, not a reasoning one.
-    output_config: { effort: 'low', format: zodOutputFormat(ExtractSchema) },
-    system: EXTRACT_SYSTEM,
+    output_config: { effort: EXTRACT_EFFORT, format: zodOutputFormat(ExtractSchema) },
+    ...(EXTRACT_THINKING ? { thinking: noThinking(EXTRACT_MODEL) } : {}),
+    system: [{ type: 'text', text: EXTRACT_SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: `Here is the rubric:\n\n${rubric}` }],
   });
 
@@ -199,8 +240,9 @@ export async function handleCheck(body: any): Promise<HandlerResult> {
   const response = await getClient().messages.parse({
     model: CHECK_MODEL,
     max_tokens: 6000,
-    output_config: { effort: 'medium', format: zodOutputFormat(CheckSchema) },
-    system: CHECK_SYSTEM,
+    output_config: { effort: CHECK_EFFORT, format: zodOutputFormat(CheckSchema) },
+    ...(CHECK_THINKING ? { thinking: noThinking(CHECK_MODEL) } : {}),
+    system: [{ type: 'text', text: CHECK_SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [
       {
         role: 'user',
@@ -248,10 +290,12 @@ export async function handleChat(body: any): Promise<HandlerResult> {
   const response = await getClient().messages.create({
     model: CHAT_MODEL,
     max_tokens: 1200,
-    output_config: { effort: 'low' },
+    output_config: { effort: CHAT_EFFORT },
+    ...(CHAT_THINKING ? { thinking: noThinking(CHAT_MODEL) } : {}),
     system: [
-      { type: 'text', text: CHAT_SYSTEM },
-      // The context changes as they write, so it sits after the stable prompt.
+      // Fixed instructions, cached. Everything volatile sits after this
+      // breakpoint, which is the whole reason the two are separate blocks.
+      { type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } },
       { type: 'text', text: context },
     ],
     messages: [

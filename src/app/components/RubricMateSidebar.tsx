@@ -189,13 +189,25 @@ export function RubricMateSidebar({
                     <Upload className="w-4 h-4 mr-2" />
                     Upload File
                   </Button>
-                  <button
-                    onClick={() => setManualPasteOpen(true)}
-                    disabled={extracting}
-                    className="text-xs text-[#4285F4] hover:underline disabled:opacity-50"
-                  >
-                    Paste rubric manually
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setManualPasteOpen(true)}
+                      disabled={extracting}
+                      className="text-xs text-[#4285F4] hover:underline disabled:opacity-50"
+                    >
+                      Paste rubric manually
+                    </button>
+                    <span className="text-xs text-gray-300">|</span>
+                    {/* A real .docx, so the upload path can be tried without
+                        having a rubric of your own to hand. */}
+                    <a
+                      href="/sample-rubric.docx"
+                      download
+                      className="text-xs text-[#4285F4] hover:underline"
+                    >
+                      Get a test file
+                    </a>
+                  </div>
                 </div>
               </Card>
             </div>

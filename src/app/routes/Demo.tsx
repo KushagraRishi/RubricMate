@@ -49,7 +49,7 @@ export function Demo() {
   if (narrow) return <TooNarrow />;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen overflow-hidden bg-white flex flex-col">
       <header className="bg-[#F1F3F4] border-b border-gray-200 px-8 py-3 shrink-0">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
           <Link

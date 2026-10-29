@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { toErrorResult, type HandlerResult } from './handlers';
-import { rateLimit } from './limits';
+import { toErrorResult, type HandlerResult } from './handlers.js';
+import { rateLimit } from './limits.js';
 
 function clientIp(req: VercelRequest): string {
   const forwarded = req.headers['x-forwarded-for'];

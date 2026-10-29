@@ -1,12 +1,12 @@
 import { Link } from 'react-router';
-import { BookCheck, ArrowRight, Upload, PenLine, ListChecks, Github } from 'lucide-react';
+import { BookCheck, ArrowRight, Github, Upload, PenLine, ListChecks } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
 import { SplitDiagram, ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
+import { DemoReel } from '../components/site/DemoReel';
 
 const STEPS = [
-  { icon: Upload, title: 'Load your rubric', body: 'A PDF, a Word file, or paste it.' },
+  { icon: Upload, title: 'Drop in your rubric', body: 'A PDF, a Word file, or paste it.' },
   { icon: PenLine, title: 'Write', body: 'Counts move as you type.' },
   { icon: ListChecks, title: 'Check it', body: 'A score and a reason for each line.' },
 ];
@@ -94,31 +94,33 @@ export function Landing() {
               </Button>
             </a>
           </div>
-          <p className="text-xs text-[#5f6368] mt-5">No sign-up. A sample rubric and essay are one click away.</p>
         </motion.div>
       </header>
 
-      <Section title="Three steps">
-        <div className="grid sm:grid-cols-3 gap-4">
-          {STEPS.map(({ icon: Icon, title, body }, i) => (
-            <motion.div
-              key={title}
-              initial={still ? false : { opacity: 0, y: 12 }}
-              whileInView={still ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.4, delay: i * 0.1, ease: 'easeOut' }}
-            >
-              <Card className="p-5 rounded-xl border border-gray-200 shadow-sm h-full">
-                <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
-                  <Icon className="w-4 h-4 text-[#4285F4]" />
-                </div>
-                <h3 className="text-sm text-[#202124] mb-1">{title}</h3>
-                <p className="text-xs text-[#5f6368]">{body}</p>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </Section>
+      {/* The reel is a document beside a sidebar, the same as the demo, so it
+          needs the same width. A phone gets the three steps in words. */}
+      <motion.div
+        className="pb-16 hidden md:block"
+        initial={still ? false : { opacity: 0, y: 16 }}
+        animate={still ? undefined : { opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
+      >
+        <DemoReel />
+      </motion.div>
+
+      <div className="md:hidden px-8 pb-16 space-y-3 max-w-[420px] mx-auto">
+        {STEPS.map(({ icon: Icon, title, body }) => (
+          <div key={title} className="flex gap-3 items-start">
+            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+              <Icon className="w-4 h-4 text-[#4285F4]" />
+            </div>
+            <div>
+              <p className="text-sm text-[#202124]">{title}</p>
+              <p className="text-xs text-[#5f6368]">{body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Section
         id="build"

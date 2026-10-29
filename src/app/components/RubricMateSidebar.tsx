@@ -1,31 +1,96 @@
-import { Settings, BookCheck, Upload, FileText, Check, Clock, X, Brain, RefreshCw, AlertCircle, Info, ChevronDown, ChevronUp, FileType, Code } from 'lucide-react';
+import {
+  BookCheck, Upload, Check, Clock, X, Brain, RefreshCw, AlertCircle, Info,
+  ChevronDown, ChevronUp, Code, Loader2, Sparkles, RotateCcw,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Textarea } from './ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import type { Criterion } from '../lib/types';
+import type { Row, Step } from '../lib/useRubricMate';
+import { SAMPLE_RUBRIC } from '../lib/samples';
+import { readRubricFile, FileProblem } from '../lib/readFile';
 
-interface RubricMateSidebarProps {
-  state: 'upload' | 'checklist' | 'progress';
+interface Props {
+  step: Step;
+  rows: Row[];
+  doneCount: number;
+  criteria: Criterion[];
+  suggestion: string | null;
+  busy: null | 'extract' | 'check';
+  error: string | null;
+  checkedAt: string;
+  onLoadRubric: (text: string) => void;
+  onCheck: () => void;
+  onReset: () => void;
+  onDismissError: () => void;
 }
 
-export function RubricMateSidebar({ state }: RubricMateSidebarProps) {
-  const [manualPasteOpen, setManualPasteOpen] = useState(false);
-  const [rubricStructureOpen, setRubricStructureOpen] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<number[]>([]);
+/** Status drives three things: border, background, and badge. Kept in one place. */
+const TONE = {
+  done: { card: 'border-green-200 bg-green-50', bar: 'bg-green-200', fill: 'bg-[#34A853]', trigger: 'hover:bg-green-100', border: 'border-green-200' },
+  in_progress: { card: 'border-blue-200 bg-blue-50', bar: 'bg-blue-200', fill: 'bg-[#4285F4]', trigger: 'hover:bg-blue-100', border: 'border-blue-200' },
+  missing: { card: 'border-red-200 bg-red-50', bar: 'bg-red-200', fill: 'bg-red-400', trigger: 'hover:bg-red-100', border: 'border-red-200' },
+} as const;
 
-  const toggleCard = (index: number) => {
-    setExpandedCards(prev => 
-      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+function StatusBadge({ status }: { status: Row['status'] }) {
+  if (status === 'done') {
+    return (
+      <Badge className="bg-[#34A853] hover:bg-[#34A853] text-white border-0 text-xs">
+        <Check className="w-3 h-3 mr-1" />
+        Done
+      </Badge>
     );
+  }
+  if (status === 'in_progress') {
+    return (
+      <Badge className="bg-[#4285F4] hover:bg-[#4285F4] text-white border-0 text-xs">
+        <Clock className="w-3 h-3 mr-1" />
+        In Progress
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="bg-red-100 text-red-800 border-0 text-xs">
+      <X className="w-3 h-3 mr-1" />
+      Missing
+    </Badge>
+  );
+}
+
+export function RubricMateSidebar({
+  step, rows, doneCount, criteria, suggestion, busy, error, checkedAt,
+  onLoadRubric, onCheck, onReset, onDismissError,
+}: Props) {
+  const [manualPasteOpen, setManualPasteOpen] = useState(false);
+  const [pasted, setPasted] = useState('');
+  const [rubricStructureOpen, setRubricStructureOpen] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<string[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const toggleCard = (id: string) =>
+    setExpandedCards((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setFileError(null);
+    try {
+      onLoadRubric(await readRubricFile(file));
+    } catch (err) {
+      setFileError(err instanceof FileProblem ? err.message : 'Could not read that file.');
+    }
   };
+
+  const extracting = busy === 'extract';
+  const checking = busy === 'check';
 
   return (
     <div className="w-[360px] bg-white border-l border-gray-200 flex flex-col shadow-lg">
@@ -41,61 +106,123 @@ export function RubricMateSidebar({ state }: RubricMateSidebarProps) {
               <p className="text-xs text-[#5f6368]">Smart Checklist for Assignments</p>
             </div>
           </div>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Settings className="w-4 h-4 text-[#5f6368]" />
-          </button>
+          {step !== 'upload' && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={onReset}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Start over"
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#5f6368]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent><p className="text-xs">Start over</p></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Upload Section */}
-        {state === 'upload' && (
+        {(error || fileError) && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-[#202124]">{error ?? fileError}</p>
+                <button
+                  onClick={() => { onDismissError(); setFileError(null); }}
+                  className="text-xs text-[#4285F4] hover:underline mt-2"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload */}
+        {step === 'upload' && (
           <>
             <div>
               <Card className="border-2 border-dashed border-gray-300 bg-[#F1F3F4] p-8 rounded-xl">
                 <div className="flex flex-col items-center text-center space-y-4">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-[#4285F4]" />
+                    {extracting
+                      ? <Loader2 className="w-6 h-6 text-[#4285F4] animate-spin" />
+                      : <Upload className="w-6 h-6 text-[#4285F4]" />}
                   </div>
                   <div>
                     <div className="flex items-center justify-center gap-1.5 mb-1">
-                      <p className="text-sm text-[#202124]">Upload your rubric</p>
+                      <p className="text-sm text-[#202124]">
+                        {extracting ? 'Reading your rubric…' : 'Upload your rubric'}
+                      </p>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="w-3.5 h-3.5 text-[#5f6368] cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p className="text-xs">Supports PDF, DOCX, and Canvas exports</p>
+                            <p className="text-xs">PDF, Word, or plain text</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <p className="text-xs text-[#5f6368]">We'll extract key requirements automatically</p>
+                    <p className="text-xs text-[#5f6368]">We'll turn it into a checklist</p>
                   </div>
-                  <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full px-6">
+
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md,text/plain"
+                    className="hidden"
+                    onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
+                  />
+                  <Button
+                    onClick={() => fileInput.current?.click()}
+                    disabled={extracting}
+                    className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full px-6"
+                  >
                     <Upload className="w-4 h-4 mr-2" />
                     Upload File
                   </Button>
-                  <button 
+                  <button
                     onClick={() => setManualPasteOpen(true)}
-                    className="text-xs text-[#4285F4] hover:underline"
+                    disabled={extracting}
+                    className="text-xs text-[#4285F4] hover:underline disabled:opacity-50"
                   >
                     Paste rubric manually
                   </button>
                 </div>
               </Card>
             </div>
-            
-            {/* Manual Paste Dialog */}
+
+            {/* No rubric to hand? One click to see the whole thing work. */}
+            <Button
+              onClick={() => onLoadRubric(SAMPLE_RUBRIC)}
+              disabled={extracting}
+              variant="outline"
+              className="w-full rounded-full border-[#4285F4] text-[#4285F4] hover:bg-blue-50"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Try a sample rubric
+            </Button>
+
             <Dialog open={manualPasteOpen} onOpenChange={setManualPasteOpen}>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Paste Rubric Manually</DialogTitle>
+                  <DialogDescription className="text-xs text-[#5f6368]">
+                    Paste the grading rubric for your assignment.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <Textarea 
+                  <Textarea
+                    value={pasted}
+                    onChange={(e) => setPasted(e.target.value)}
                     placeholder="Paste your rubric text here..."
                     className="min-h-[200px] resize-none"
                   />
@@ -103,7 +230,11 @@ export function RubricMateSidebar({ state }: RubricMateSidebarProps) {
                     <Button variant="outline" onClick={() => setManualPasteOpen(false)}>
                       Cancel
                     </Button>
-                    <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white">
+                    <Button
+                      disabled={!pasted.trim()}
+                      onClick={() => { setManualPasteOpen(false); onLoadRubric(pasted); }}
+                      className="bg-[#4285F4] hover:bg-[#3367D6] text-white"
+                    >
                       Extract Requirements
                     </Button>
                   </div>
@@ -111,30 +242,17 @@ export function RubricMateSidebar({ state }: RubricMateSidebarProps) {
               </DialogContent>
             </Dialog>
 
-            {/* Empty State Illustration */}
             <Card className="bg-[#F1F3F4] p-6 rounded-xl border-0">
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded border-2 border-gray-300" />
-                  <div className="flex-1">
-                    <div className="h-3 bg-gray-300 rounded w-3/4 mb-1" />
-                    <div className="h-2 bg-gray-200 rounded w-full" />
+                {[['3/4', 'w-full'], ['2/3', 'w-5/6'], ['4/5', 'w-3/4']].map(([top, bottom], i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded border-2 border-gray-300" />
+                    <div className="flex-1">
+                      <div className={`h-3 bg-gray-300 rounded mb-1 w-${top}`} />
+                      <div className={`h-2 bg-gray-200 rounded ${bottom}`} />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded border-2 border-gray-300" />
-                  <div className="flex-1">
-                    <div className="h-3 bg-gray-300 rounded w-2/3 mb-1" />
-                    <div className="h-2 bg-gray-200 rounded w-5/6" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded border-2 border-gray-300" />
-                  <div className="flex-1">
-                    <div className="h-3 bg-gray-300 rounded w-4/5 mb-1" />
-                    <div className="h-2 bg-gray-200 rounded w-3/4" />
-                  </div>
-                </div>
+                ))}
               </div>
             </Card>
 
@@ -143,586 +261,262 @@ export function RubricMateSidebar({ state }: RubricMateSidebarProps) {
                 <AlertCircle className="w-5 h-5 text-[#4285F4] flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-[#202124] mb-1">How it works</p>
-                  <p className="text-xs text-[#5f6368]">Upload your assignment rubric, and RubricMate will analyze requirements and track your progress in real-time as you write.</p>
+                  <p className="text-xs text-[#5f6368]">
+                    Load a rubric, write in the doc, then check your draft against it.
+                  </p>
                 </div>
               </div>
             </div>
           </>
         )}
 
-        {/* Checklist Generated State */}
-        {state === 'checklist' && (
+        {/* Checklist + progress share the same list; only the framing differs. */}
+        {step !== 'upload' && (
           <>
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Check className="w-4 h-4 text-[#34A853]" />
-                <p className="text-sm text-[#202124]">Rubric extracted successfully</p>
+            {step === 'checklist' ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Check className="w-4 h-4 text-[#34A853]" />
+                  <p className="text-sm text-[#202124]">Rubric read</p>
+                </div>
+                <p className="text-xs text-[#5f6368] mb-3">
+                  {criteria.length} {criteria.length === 1 ? 'criterion' : 'criteria'} found
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRubricStructureOpen(true)}
+                  className="w-full rounded-full text-xs h-7 border-green-300 text-[#34A853] hover:bg-green-50"
+                >
+                  <Code className="w-3 h-3 mr-1.5" />
+                  View Rubric Structure
+                </Button>
               </div>
-              <p className="text-xs text-[#5f6368] mb-3">5 criteria detected</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setRubricStructureOpen(true)}
-                className="w-full rounded-full text-xs h-7 border-green-300 text-[#34A853] hover:bg-green-50"
-              >
-                <Code className="w-3 h-3 mr-1.5" />
-                View Rubric Structure
-              </Button>
-            </div>
-            
-            {/* Rubric Structure Dialog */}
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-[#4285F4]" />
+                  <p className="text-sm text-[#202124]">Checked at {checkedAt}</p>
+                </div>
+                <p className="text-xs text-[#5f6368]">Counts update live as you write</p>
+              </div>
+            )}
+
             <Dialog open={rubricStructureOpen} onOpenChange={setRubricStructureOpen}>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Rubric Structure</DialogTitle>
+                  <DialogDescription className="text-xs text-[#5f6368]">
+                    What the model pulled out of your rubric.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="bg-gray-50 rounded-lg p-4 max-h-[400px] overflow-y-auto">
                   <pre className="text-xs text-[#202124] whitespace-pre-wrap font-mono">
-{`{
-  "criteria": [
-    {
-      "id": 1,
-      "name": "Thesis Statement",
-      "description": "Clear, focused argument",
-      "weight": 20,
-      "status": "pending"
-    },
-    {
-      "id": 2,
-      "name": "Word Count",
-      "description": "Minimum 1000 words",
-      "weight": 15,
-      "status": "pending"
-    },
-    {
-      "id": 3,
-      "name": "Academic References",
-      "description": "At least 3 citations",
-      "weight": 25,
-      "status": "pending"
-    },
-    {
-      "id": 4,
-      "name": "Structure",
-      "description": "Intro & conclusion",
-      "weight": 20,
-      "status": "pending"
-    },
-    {
-      "id": 5,
-      "name": "Grammar & Spelling",
-      "description": "Polished writing",
-      "weight": 20,
-      "status": "pending"
-    }
-  ]
-}`}
+                    {JSON.stringify({ criteria }, null, 2)}
                   </pre>
                 </div>
               </DialogContent>
             </Dialog>
 
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm text-[#202124]">Assignment Requirements</h3>
-                <div className="flex items-center gap-1">
+              <div className="mb-3">
+                <h3 className="text-sm text-[#202124] mb-1.5">Assignment Requirements</h3>
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-[#34A853]" />
                     <span className="text-xs text-[#5f6368]">Done</span>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
+                  <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-[#4285F4]" />
                     <span className="text-xs text-[#5f6368]">In Progress</span>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
+                  <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-red-400" />
                     <span className="text-xs text-[#5f6368]">Missing</span>
                   </div>
                 </div>
               </div>
+
               <div className="space-y-3">
-                <Card className="p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <Checkbox id="req1" className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <label htmlFor="req1" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                        Thesis statement present in introduction
-                      </label>
-                      <p className="text-xs text-[#5f6368]">Clear, focused argument stating essay's main point</p>
-                    </div>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-0 text-xs shrink-0">
-                      Pending
-                    </Badge>
-                  </div>
-                </Card>
+                {rows.map((row) => {
+                  const { criterion, status, percent, result, live } = row;
+                  const tone = TONE[status];
+                  const open = expandedCards.includes(criterion.id);
+                  const hasDetail = Boolean(result);
+                  const plain = step === 'checklist' && !result && !live;
 
-                <Card className="p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <Checkbox id="req2" className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <label htmlFor="req2" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                        Minimum 1000 words
-                      </label>
-                      <p className="text-xs text-[#5f6368]">Current count: 0 words</p>
-                      <Progress value={0} className="h-1.5 mt-2" />
-                    </div>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-0 text-xs shrink-0">
-                      Pending
-                    </Badge>
-                  </div>
-                </Card>
+                  return (
+                    <Collapsible
+                      key={criterion.id}
+                      open={open}
+                      onOpenChange={() => hasDetail && toggleCard(criterion.id)}
+                    >
+                      <Card
+                        className={`rounded-xl shadow-sm overflow-hidden border ${
+                          plain ? 'border-gray-200' : tone.card
+                        }`}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={status === 'done'}
+                              className="mt-0.5 shrink-0 pointer-events-none"
+                              tabIndex={-1}
+                            />
+                            <span className="flex-1 min-w-0 text-sm text-[#202124]">
+                              {criterion.name}
+                            </span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {plain ? (
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-0 text-xs">
+                                  Pending
+                                </Badge>
+                              ) : (
+                                <StatusBadge status={status} />
+                              )}
+                              {hasDetail && (
+                                <CollapsibleTrigger className={`p-1 rounded ${tone.trigger}`}>
+                                  {open
+                                    ? <ChevronUp className="w-4 h-4 text-[#5f6368]" />
+                                    : <ChevronDown className="w-4 h-4 text-[#5f6368]" />}
+                                </CollapsibleTrigger>
+                              )}
+                            </div>
+                          </div>
 
-                <Card className="p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <Checkbox id="req3" className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <label htmlFor="req3" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                        At least 3 academic references cited
-                      </label>
-                      <p className="text-xs text-[#5f6368]">Properly formatted citations required</p>
-                    </div>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-0 text-xs shrink-0">
-                      Pending
-                    </Badge>
-                  </div>
-                </Card>
+                          <div className="pl-7 mt-1">
+                            <p className="text-xs text-[#5f6368]">{live ?? criterion.description}</p>
+                            {live && !open && <Progress value={percent} className="h-1.5 mt-2" />}
+                            {!plain && !open && !live && (
+                              <div className={`mt-2 h-1 rounded-full overflow-hidden ${tone.bar}`}>
+                                <div className={`h-full ${tone.fill}`} style={{ width: `${percent}%` }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                <Card className="p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <Checkbox id="req4" className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <label htmlFor="req4" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                        Introduction and conclusion sections
-                      </label>
-                      <p className="text-xs text-[#5f6368]">Both sections clearly structured</p>
-                    </div>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-0 text-xs shrink-0">
-                      Pending
-                    </Badge>
-                  </div>
-                </Card>
-
-                <Card className="p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <Checkbox id="req5" className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <label htmlFor="req5" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                        Proper grammar and spelling
-                      </label>
-                      <p className="text-xs text-[#5f6368]">Document should be polished and error-free</p>
-                    </div>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-0 text-xs shrink-0">
-                      Pending
-                    </Badge>
-                  </div>
-                </Card>
+                        <CollapsibleContent>
+                          <AnimatePresence>
+                            {open && result && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className={`border-t bg-white p-4 ${tone.border}`}
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-[#5f6368]">AI Score</span>
+                                    <span
+                                      className={`text-sm ${
+                                        status === 'done'
+                                          ? 'text-[#34A853]'
+                                          : status === 'in_progress'
+                                            ? 'text-[#4285F4]'
+                                            : 'text-red-600'
+                                      }`}
+                                    >
+                                      {result.score} / 10
+                                    </span>
+                                  </div>
+                                  <Progress value={result.score * 10} className="h-2" />
+                                  <p className="text-xs text-[#202124]">{result.feedback}</p>
+                                  {result.evidence && (
+                                    <p className="text-xs text-[#5f6368] border-l-2 border-gray-200 pl-2 italic">
+                                      “{result.evidence}”
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
+                  );
+                })}
               </div>
             </div>
 
-            <Card className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-[#202124]">Overall Progress</span>
-                <span className="text-xs text-[#5f6368]">0 of 5 completed</span>
-              </div>
-              <Progress value={0} className="h-2" />
-            </Card>
-          </>
-        )}
-
-        {/* Progress Tracking State */}
-        {state === 'progress' && (
-          <>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-4 h-4 text-[#4285F4]" />
-                <p className="text-sm text-[#202124]">Live tracking active</p>
-              </div>
-              <p className="text-xs text-[#5f6368]">RubricMate is monitoring your progress in real-time</p>
-            </div>
-
-            <div>
-              <h3 className="text-sm text-[#202124] mb-3">Assignment Requirements</h3>
-              <div className="space-y-3">
-                {/* Requirement 1 - Done with Collapsible Feedback */}
-                <Collapsible open={expandedCards.includes(1)} onOpenChange={() => toggleCard(1)}>
-                  <Card className="rounded-xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox id="req1-done" checked className="mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <label htmlFor="req1-done" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                            Thesis statement present in introduction
-                          </label>
-                          <p className="text-xs text-[#5f6368]">Clear, focused argument stating essay's main point</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge className="bg-[#34A853] hover:bg-[#34A853] text-white border-0 text-xs">
-                            <Check className="w-3 h-3 mr-1" />
-                            Done
-                          </Badge>
-                          <CollapsibleTrigger className="p-1 hover:bg-green-100 rounded">
-                            {expandedCards.includes(1) ? (
-                              <ChevronUp className="w-4 h-4 text-[#5f6368]" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-[#5f6368]" />
-                            )}
-                          </CollapsibleTrigger>
-                        </div>
-                      </div>
-                      {!expandedCards.includes(1) && (
-                        <div className="mt-2 h-1 bg-green-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#34A853]" style={{ width: '90%' }} />
-                        </div>
-                      )}
-                    </div>
-                    <CollapsibleContent>
-                      <AnimatePresence>
-                        {expandedCards.includes(1) && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-green-200 bg-white p-4"
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#5f6368]">AI Score</span>
-                                <span className="text-sm text-[#34A853]">9 / 10</span>
-                              </div>
-                              <Progress value={90} className="h-2" />
-                              <p className="text-xs text-[#202124]">
-                                Excellent thesis statement. Your argument is clear and directly addresses the topic of climate change's impact on agriculture.
-                              </p>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full rounded-full text-xs h-7"
-                              >
-                                <RefreshCw className="w-3 h-3 mr-1.5" />
-                                Recheck
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* Requirement 2 - In Progress */}
-                <Collapsible open={expandedCards.includes(2)} onOpenChange={() => toggleCard(2)}>
-                  <Card className="rounded-xl border border-blue-200 bg-blue-50 shadow-sm overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox id="req2-progress" className="mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <label htmlFor="req2-progress" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                            Minimum 1000 words
-                          </label>
-                          <p className="text-xs text-[#5f6368]">Current count: 723 words</p>
-                          {!expandedCards.includes(2) && (
-                            <Progress value={72} className="h-1.5 mt-2" />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge className="bg-[#4285F4] hover:bg-[#4285F4] text-white border-0 text-xs">
-                            <Clock className="w-3 h-3 mr-1" />
-                            In Progress
-                          </Badge>
-                          <CollapsibleTrigger className="p-1 hover:bg-blue-100 rounded">
-                            {expandedCards.includes(2) ? (
-                              <ChevronUp className="w-4 h-4 text-[#5f6368]" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-[#5f6368]" />
-                            )}
-                          </CollapsibleTrigger>
-                        </div>
-                      </div>
-                      {!expandedCards.includes(2) && (
-                        <div className="mt-2 h-1 bg-blue-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#4285F4]" style={{ width: '72%' }} />
-                        </div>
-                      )}
-                    </div>
-                    <CollapsibleContent>
-                      <AnimatePresence>
-                        {expandedCards.includes(2) && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-blue-200 bg-white p-4"
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#5f6368]">AI Score</span>
-                                <span className="text-sm text-[#4285F4]">7 / 10</span>
-                              </div>
-                              <Progress value={72} className="h-2" />
-                              <p className="text-xs text-[#202124]">
-                                You're 72% there! Keep writing to reach the minimum word count. You need 277 more words.
-                              </p>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full rounded-full text-xs h-7"
-                              >
-                                <RefreshCw className="w-3 h-3 mr-1.5" />
-                                Recheck
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* Requirement 3 - Done */}
-                <Collapsible open={expandedCards.includes(3)} onOpenChange={() => toggleCard(3)}>
-                  <Card className="rounded-xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox id="req3-done" checked className="mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <label htmlFor="req3-done" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                            At least 3 academic references cited
-                          </label>
-                          <p className="text-xs text-[#5f6368]">Found: Smith et al. (2023), Johnson & Martinez (2022), Brown (2024)</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge className="bg-[#34A853] hover:bg-[#34A853] text-white border-0 text-xs">
-                            <Check className="w-3 h-3 mr-1" />
-                            Done
-                          </Badge>
-                          <CollapsibleTrigger className="p-1 hover:bg-green-100 rounded">
-                            {expandedCards.includes(3) ? (
-                              <ChevronUp className="w-4 h-4 text-[#5f6368]" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-[#5f6368]" />
-                            )}
-                          </CollapsibleTrigger>
-                        </div>
-                      </div>
-                      {!expandedCards.includes(3) && (
-                        <div className="mt-2 h-1 bg-green-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#34A853]" style={{ width: '100%' }} />
-                        </div>
-                      )}
-                    </div>
-                    <CollapsibleContent>
-                      <AnimatePresence>
-                        {expandedCards.includes(3) && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-green-200 bg-white p-4"
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#5f6368]">AI Score</span>
-                                <span className="text-sm text-[#34A853]">10 / 10</span>
-                              </div>
-                              <Progress value={100} className="h-2" />
-                              <p className="text-xs text-[#202124]">
-                                Perfect! You've included 3 properly formatted academic citations. All references follow correct citation format.
-                              </p>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full rounded-full text-xs h-7"
-                              >
-                                <RefreshCw className="w-3 h-3 mr-1.5" />
-                                Recheck
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* Requirement 4 - Missing */}
-                <Collapsible open={expandedCards.includes(4)} onOpenChange={() => toggleCard(4)}>
-                  <Card className="rounded-xl border border-red-200 bg-red-50 shadow-sm overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox id="req4-missing" className="mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <label htmlFor="req4-missing" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                            Introduction and conclusion sections
-                          </label>
-                          <p className="text-xs text-[#5f6368]">Missing conclusion section</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge variant="secondary" className="bg-red-100 text-red-800 border-0 text-xs">
-                            <X className="w-3 h-3 mr-1" />
-                            Missing
-                          </Badge>
-                          <CollapsibleTrigger className="p-1 hover:bg-red-100 rounded">
-                            {expandedCards.includes(4) ? (
-                              <ChevronUp className="w-4 h-4 text-[#5f6368]" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-[#5f6368]" />
-                            )}
-                          </CollapsibleTrigger>
-                        </div>
-                      </div>
-                      {!expandedCards.includes(4) && (
-                        <div className="mt-2 h-1 bg-red-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-400" style={{ width: '50%' }} />
-                        </div>
-                      )}
-                    </div>
-                    <CollapsibleContent>
-                      <AnimatePresence>
-                        {expandedCards.includes(4) && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-red-200 bg-white p-4"
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#5f6368]">AI Score</span>
-                                <span className="text-sm text-red-600">5 / 10</span>
-                              </div>
-                              <Progress value={50} className="h-2" />
-                              <p className="text-xs text-[#202124]">
-                                Your essay has an introduction but is missing a conclusion section. Add a closing paragraph that summarizes your main points.
-                              </p>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full rounded-full text-xs h-7"
-                              >
-                                <RefreshCw className="w-3 h-3 mr-1.5" />
-                                Recheck
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* Requirement 5 - Done */}
-                <Collapsible open={expandedCards.includes(5)} onOpenChange={() => toggleCard(5)}>
-                  <Card className="rounded-xl border border-green-200 bg-green-50 shadow-sm overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Checkbox id="req5-done" checked className="mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <label htmlFor="req5-done" className="text-sm text-[#202124] cursor-pointer block mb-1">
-                            Proper grammar and spelling
-                          </label>
-                          <p className="text-xs text-[#5f6368]">No major issues detected</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge className="bg-[#34A853] hover:bg-[#34A853] text-white border-0 text-xs">
-                            <Check className="w-3 h-3 mr-1" />
-                            Done
-                          </Badge>
-                          <CollapsibleTrigger className="p-1 hover:bg-green-100 rounded">
-                            {expandedCards.includes(5) ? (
-                              <ChevronUp className="w-4 h-4 text-[#5f6368]" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-[#5f6368]" />
-                            )}
-                          </CollapsibleTrigger>
-                        </div>
-                      </div>
-                      {!expandedCards.includes(5) && (
-                        <div className="mt-2 h-1 bg-green-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#34A853]" style={{ width: '95%' }} />
-                        </div>
-                      )}
-                    </div>
-                    <CollapsibleContent>
-                      <AnimatePresence>
-                        {expandedCards.includes(5) && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-green-200 bg-white p-4"
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#5f6368]">AI Score</span>
-                                <span className="text-sm text-[#34A853]">9.5 / 10</span>
-                              </div>
-                              <Progress value={95} className="h-2" />
-                              <p className="text-xs text-[#202124]">
-                                Excellent writing quality! Your essay is well-polished with proper grammar and spelling throughout. No major issues detected.
-                              </p>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full rounded-full text-xs h-7"
-                              >
-                                <RefreshCw className="w-3 h-3 mr-1.5" />
-                                Recheck
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-              </div>
-            </div>
-
-            <Card className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-xl border border-blue-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-[#202124]">Overall Progress</span>
-                <span className="text-xs text-[#34A853]">3 of 5 completed</span>
-              </div>
-              <Progress value={60} className="h-2 mb-2" />
-              <div className="flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-[#34A853]" />
-                <Check className="w-3.5 h-3.5 text-[#34A853]" />
-                <Check className="w-3.5 h-3.5 text-[#34A853]" />
-                <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
-                <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
-              </div>
-            </Card>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+            <Card
+              className={`p-4 rounded-xl border ${
+                step === 'progress'
+                  ? 'bg-gradient-to-r from-blue-50 to-green-50 border-blue-200'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
             >
-              <Card className="bg-purple-50 border-2 border-purple-300 p-4 rounded-xl shadow-md">
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Brain className="w-4 h-4 text-purple-600" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-[#202124]">Overall Progress</span>
+                <span className={`text-xs ${doneCount > 0 ? 'text-[#34A853]' : 'text-[#5f6368]'}`}>
+                  {doneCount} of {rows.length} completed
+                </span>
+              </div>
+              <Progress
+                value={rows.length ? Math.round((doneCount / rows.length) * 100) : 0}
+                className="h-2 mb-2"
+              />
+              <div className="flex items-center gap-1.5">
+                {rows.map((row) =>
+                  row.status === 'done' ? (
+                    <Check key={row.criterion.id} className="w-3.5 h-3.5 text-[#34A853]" />
+                  ) : (
+                    <div key={row.criterion.id} className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
+                  ),
+                )}
+              </div>
+            </Card>
+
+            {suggestion && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              >
+                <Card className="bg-purple-50 border-2 border-purple-300 p-4 rounded-xl shadow-md">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Brain className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm text-[#202124] mb-1">Do this next</h4>
+                      <p className="text-xs text-[#5f6368] mb-3">{suggestion}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm text-[#202124] mb-1">AI Review Suggestion</h4>
-                    <p className="text-xs text-[#5f6368] mb-3">You're missing a conclusion section. Add a closing paragraph that summarizes your main arguments and reinforces your thesis.</p>
-                    <Button variant="outline" size="sm" className="rounded-full text-xs h-8">
-                      <RefreshCw className="w-3 h-3 mr-1.5" />
-                      Re-check Document
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
+                </Card>
+              </motion.div>
+            )}
           </>
         )}
       </div>
 
-      {/* Footer */}
+      {/* Check button lives in the footer so it is always reachable. */}
+      {step !== 'upload' && (
+        <div className="px-6 py-4 border-t border-gray-200 bg-white">
+          <Button
+            onClick={onCheck}
+            disabled={checking}
+            className="w-full rounded-full bg-[#4285F4] hover:bg-[#3367D6] text-white"
+          >
+            {checking ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking your draft…</>
+            ) : (
+              <><RefreshCw className="w-4 h-4 mr-2" />{step === 'progress' ? 'Check again' : 'Check my draft'}</>
+            )}
+          </Button>
+        </div>
+      )}
+
       <div className="p-4 border-t border-gray-200 bg-[#F1F3F4]">
         <div className="flex items-center justify-between text-xs text-[#5f6368]">
-          <span>RubricMate by YourName</span>
-          <button className="hover:text-[#4285F4] transition-colors">Report issue</button>
+          <span>RubricMate by Kushagra Chaudhary</span>
+          <a
+            href="https://github.com/KushagraRishi"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-[#4285F4] transition-colors"
+          >
+            GitHub
+          </a>
         </div>
       </div>
     </div>

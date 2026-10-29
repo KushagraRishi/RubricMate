@@ -71,7 +71,7 @@ export function GoogleDocMock({ draft, onDraftChange, words, citations }: Props)
   const toolbarButton = 'p-1.5 hover:bg-gray-100 rounded';
 
   return (
-    <div className="flex-1 bg-[#F1F3F4] p-8 overflow-y-auto">
+    <div className="flex-1 min-h-0 bg-[#F1F3F4] p-8 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-sm max-w-[720px] mx-auto">
         {/* Google Docs Toolbar */}
         <div className="border-b border-gray-200 px-4 py-2 sticky top-0 bg-white z-10 rounded-t-lg">

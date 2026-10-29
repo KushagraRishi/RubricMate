@@ -11,11 +11,20 @@ which requirements you have met, which are half done, and what to fix next.
 
 Three serverless functions sit behind a React single-page app:
 
-| Route | What it does |
-|---|---|
-| `POST /api/extract` | Reads rubric text into structured criteria |
-| `POST /api/check` | Scores a draft against those criteria |
-| `POST /api/chat` | Answers questions about the rubric or the draft |
+| Route | What it does | Model |
+|---|---|---|
+| `POST /api/extract` | Reads rubric text into structured criteria | Haiku 5.5 |
+| `POST /api/check` | Scores a draft against those criteria | Sonnet 5.5 |
+| `POST /api/chat` | Answers questions about the rubric or the draft | Haiku 5.5 |
+
+Models were picked by running the same rubric and essay through all three.
+Extraction and chat came out identical on Haiku, so they run on Haiku.
+Marking a draft did not — the sample essay ends without a conclusion on
+purpose, and Haiku called the structure done where Sonnet and Opus both
+caught it. About 2c per session instead of 8c on Opus throughout.
+
+Override any of them with the `EXTRACT_MODEL`, `CHECK_MODEL` and `CHAT_MODEL`
+environment variables; no code change needed.
 
 Both of the first two use structured outputs with a Zod schema, so the response
 is validated against that schema before it arrives. The same schema file types
@@ -81,7 +90,7 @@ demo keeps working rather than failing closed.
 ## Built with
 
 React 18, Vite 6, Tailwind v4, shadcn/ui, Radix, Motion, Zod, and the Anthropic
-TypeScript SDK on Claude Opus 5.5.
+TypeScript SDK.
 
 The interface began as a Figma Make export — three hardcoded screens with every
 score typed in by hand. The colours, cards, status badges and collapsing

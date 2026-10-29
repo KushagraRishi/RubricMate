@@ -407,7 +407,7 @@ export function DemoReel() {
           )}
           <p className="text-sm" style={{ color: MUTED }}>
             <span style={{ color: INK }}>{caption}</span>
-            {' — '}real output, no sign-up
+            {'. '}Real output, no sign-up.
           </p>
         </div>
 

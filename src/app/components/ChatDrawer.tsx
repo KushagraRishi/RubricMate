@@ -30,7 +30,7 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
   const bottom = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottom.current?.scrollIntoView({ behavior: 'smooth' });
+    bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, sending]);
 
   const send = async (text: string) => {
@@ -60,7 +60,7 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[400px] p-0 flex flex-col">
+      <SheetContent side="right" className="w-[400px] p-0 flex flex-col gap-0">
         <SheetHeader className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -77,8 +77,8 @@ export function ChatDrawer({ open, onOpenChange, draft, criteria }: Props) {
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-4 p-6">
             <div className="flex gap-3">
               <div className="w-8 h-8 bg-[#4285F4] rounded-full flex items-center justify-center flex-shrink-0">
                 <Brain className="w-4 h-4 text-white" />

@@ -129,9 +129,9 @@ export function Landing() {
       >
         <SplitDiagram />
         <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
-          The first version sent the draft to the model to learn its own word count — a two second
-          wait for a number the browser already had. Splitting it made the page feel immediate and
-          cut the bill at the same time.
+          The first version sent the draft to the model to learn its own word count. That was a
+          two second wait for a number the browser already had. Splitting it made the page feel
+          immediate and cut the bill at the same time.
         </p>
       </Section>
 
@@ -140,7 +140,7 @@ export function Landing() {
         <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
           Files become text in the browser, so a large PDF never crosses the wire. Both scoring calls
           use a Zod schema as structured output, so a malformed reply is impossible rather than
-          unlikely — and the same schema types the code that renders it.
+          unlikely. The same schema also types the code that renders it.
         </p>
       </Section>
 

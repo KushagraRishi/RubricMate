@@ -23,7 +23,7 @@ Three serverless functions sit behind a React single-page app:
 
 Models were picked by running the same rubric and essay through all three.
 Extraction and chat came out identical on Haiku, so they run on Haiku.
-Marking a draft did not — the sample essay ends without a conclusion on
+Marking a draft did not. The sample essay ends without a conclusion on
 purpose, and Haiku called the structure done where Sonnet and Opus both
 caught it, even at high effort.
 
@@ -31,7 +31,7 @@ Two further things, also measured:
 
 - **The fixed part of each prompt is cached.** A repeat check pays a tenth of
   the input price on it. Chat's prompt is under the 512-token minimum, so it
-  does not cache — the marker is there and simply never fires.
+  does not cache, so the marker is there and simply never fires.
 - **Reasoning is off for extraction, on for checking.** Off halved extraction's
   output tokens and made the criteria list more consistent. On the check it
   measured the same price either way over repeated runs, so it stays on as a
@@ -55,9 +55,9 @@ the React components.
 
 Criteria come back marked measurable or not.
 
-- **Measurable** — a word count, a minimum number of citations. Evaluated in the
+- **Measurable.** A word count, a minimum number of citations. Evaluated in the
   browser on every keystroke. Instant, exact, free.
-- **Everything else** — is this a real thesis, is there a conclusion. Sent to the
+- **Everything else.** Is this a real thesis, is there a conclusion. Sent to the
   model when you press **Check my draft**.
 
 That is why the word counter moves while you type but the feedback does not.
@@ -81,7 +81,7 @@ npm run dev
 
 Open http://localhost:5173.
 
-`npm run dev` serves `/api/*` from the same handler files Vercel deploys — a
+`npm run dev` serves `/api/*` from the same handler files Vercel deploys. A
 small Vite plugin (`vite-plugin-dev-api.ts`) mounts them, so what you test
 locally is what ships.
 
@@ -113,7 +113,7 @@ demo keeps working rather than failing closed.
 React 18, Vite 6, Tailwind v4, shadcn/ui, Radix, Motion, Zod, and the Anthropic
 TypeScript SDK.
 
-The interface began as a Figma Make export — three hardcoded screens with every
+The interface began as a Figma Make export: three hardcoded screens with every
 score typed in by hand. The colours, cards, status badges and collapsing
 feedback panels are the originals; what changed is that the numbers in them are
 now real.

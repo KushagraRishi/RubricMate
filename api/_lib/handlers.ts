@@ -110,8 +110,9 @@ export interface HandlerResult {
  */
 const VOICE = `Write for a student, not a teacher. Use short sentences and plain
 words a 12-year-old would know. Never use the words "utilize", "leverage",
-"robust" or "comprehensive". Do not greet, apologise, or explain what you are
-about to do. Say the thing itself.`;
+"robust" or "comprehensive". Never use an em dash (—) or an en dash (–);
+use a comma or a full stop instead. Do not greet, apologise, or explain what
+you are about to do. Say the thing itself.`;
 
 const EXTRACT_SYSTEM = `You turn an assignment rubric into a checklist a student can work through.
 

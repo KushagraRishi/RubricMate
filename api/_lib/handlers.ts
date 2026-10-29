@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { ExtractSchema, CheckSchema } from '../../src/app/lib/schema';
-import type { Criterion, ChatMessage } from '../../src/app/lib/types';
-import { LIMITS } from './limits';
+import { ExtractSchema, CheckSchema } from './schema.js';
+import type { Criterion, ChatMessage } from '../../src/app/lib/types.js';
+import { LIMITS } from './limits.js';
 
 /**
  * One model per route, because the three jobs are not the same job.

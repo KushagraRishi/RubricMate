@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  BookCheck, Check, Clock, FileText, FileDown, Loader2, Pause, Play,
+  BookCheck, Check, Clock, X, FileText, FileDown, Loader2, Pause, Play,
   RefreshCw, Brain, ArrowRight,
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -16,8 +16,12 @@ import { SAMPLE_DRAFT } from '../../lib/samples';
  * is the same markup and the same palette as the real thing, scripted off one
  * clock, so it stays sharp, weighs a few kB, and loops forever.
  *
- * Every number in it is the real result of running the sample rubric against
- * the sample essay -- including the three criteria that do not pass.
+ * It plays the real shape of the product, not a highlight reel. The two
+ * criteria that can be counted -- words and sources -- tick over while the
+ * essay is still being typed, because in the real app they are counted in the
+ * browser on every keystroke. The three that need a judgement sit there
+ * pending until the model is actually called. Watching those two halves move
+ * at different times is the clearest way to show the idea the app is built on.
  */
 
 const BLUE = '#4285F4';
@@ -27,46 +31,60 @@ const MUTED = '#5f6368';
 
 /** Scene boundaries in ms. One clock, everything derived from it. */
 const DROP = 0;
-const READ = 1400;
-const LIST = 2800;
-const TYPE = 4600;
-const CHECK = 9000;
-const SCORE = 10400;
-const NEXT = 12400;
-const LOOP = 16600;
+const READ = 1300;
+const LIST = 2600;
+const TYPE = 4200;
+const CHECK = 8400;
+const SCORE = 9600;
+const NEXT = 11600;
+const FIX = 13400;
+const RECHECK = 16600;
+const DONE = 17800;
+const LOOP = 21600;
 
 const CAPTIONS: [number, string][] = [
   [DROP, 'Drop in the rubric'],
   [READ, 'It reads the rubric'],
   [LIST, 'You get a checklist'],
-  [TYPE, 'Counts move as you type'],
-  [CHECK, 'Then it checks the draft'],
+  [TYPE, 'Words and sources tick off as you type'],
+  [CHECK, 'The model judges the rest'],
   [SCORE, 'A score and a reason for each line'],
   [NEXT, 'And one thing to do next'],
+  [FIX, 'Do it, and keep writing'],
+  [RECHECK, 'Check again'],
+  [DONE + 700, 'All five met'],
 ];
 
-type Status = 'done' | 'in_progress';
+type Status = 'done' | 'in_progress' | 'missing';
 
 const TONE = {
-  done: { card: 'border-green-200 bg-green-50', fill: GREEN, text: 'text-[#34A853]', label: 'Done', Icon: Check },
-  in_progress: { card: 'border-blue-200 bg-blue-50', fill: BLUE, text: 'text-[#4285F4]', label: 'In progress', Icon: Clock },
+  done: { card: 'border-green-200 bg-green-50', fill: GREEN, label: 'Done', Icon: Check },
+  in_progress: { card: 'border-blue-200 bg-blue-50', fill: BLUE, label: 'In progress', Icon: Clock },
+  missing: { card: 'border-red-200 bg-red-50', fill: '#f87171', label: 'Missing', Icon: X },
 } as const;
 
-const ROWS: { id: string; name: string; pending: string; detail: string; status: Status; percent: number }[] = [
-  { id: 'thesis', name: 'Thesis and argument', pending: 'Clear, arguable position', detail: 'Stated in the opening', status: 'done', percent: 90 },
-  { id: 'evidence', name: 'Use of evidence', pending: 'At least four sources', detail: '3 of 4 sources', status: 'in_progress', percent: 75 },
-  { id: 'structure', name: 'Structure', pending: 'Intro, body, conclusion', detail: 'No conclusion yet', status: 'in_progress', percent: 60 },
-  { id: 'length', name: 'Length', pending: '1,000 to 1,500 words', detail: '579 of 1,000 words', status: 'in_progress', percent: 58 },
-  { id: 'writing', name: 'Writing quality', pending: 'Grammar and clarity', detail: 'Reads cleanly', status: 'done', percent: 90 },
-];
+/** Where the first draft lands, and where the revision takes it. */
+const DRAFT_WORDS = 579;
+const FINAL_WORDS = 1040;
+const NEED_WORDS = 1000;
+const NEED_SOURCES = 4;
 
-const WORDS = 579;
 const SUGGESTION = 'Add a fourth source and a real conclusion, and take the essay past 1,000 words.';
 
 const [TITLE, ...REST] = SAMPLE_DRAFT.split('\n\n');
-const BODY = REST.join(' ').slice(0, 540);
+const BODY = REST.join(' ');
+const FIRST = BODY.slice(0, 520);
+const SECOND = BODY.slice(520, 900);
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
+const pct = (have: number, need: number) => Math.min(100, Math.round((have / need) * 100));
+
+interface View {
+  lit: boolean;
+  status: Status;
+  detail: string;
+  percent: number;
+}
 
 export function DemoReel() {
   const still = useReducedMotion();
@@ -74,7 +92,7 @@ export function DemoReel() {
   const [playing, setPlaying] = useState(true);
   const [seen, setSeen] = useState(true);
   // Reduced motion gets the last frame of the story and no clock at all.
-  const [t, setT] = useState(still ? NEXT + 600 : 0);
+  const [t, setT] = useState(still ? DONE + 800 : 0);
 
   // Nothing animates while it is scrolled past. A loop running in a tab nobody
   // is looking at is just battery.
@@ -94,20 +112,69 @@ export function DemoReel() {
     return () => clearInterval(id);
   }, [running]);
 
-  const at = (from: number, to: number) => t >= from && t < to;
+  const between = (from: number, to: number) => t >= from && t < to;
+
   const typed = clamp((t - TYPE) / (CHECK - TYPE));
+  const rewritten = clamp((t - FIX) / (RECHECK - FIX));
 
-  const reading = at(READ, LIST);
+  const reading = between(READ, LIST);
   const listed = t >= LIST;
-  const writing = at(TYPE, CHECK);
-  const checking = at(CHECK, SCORE);
+  const writing = between(TYPE, CHECK) || between(FIX, RECHECK);
+  const checking = between(CHECK, SCORE) || between(RECHECK, DONE);
   const scored = t >= SCORE;
-  const showNext = t >= NEXT;
 
-  const words = writing ? Math.round(WORDS * typed) : t >= CHECK ? WORDS : 0;
-  const sources = Math.min(3, Math.floor(typed * 3.6));
-  const text = writing ? BODY.slice(0, Math.round(BODY.length * typed)) : t >= CHECK ? BODY : '';
+  // The counters. These are the half of the rubric the browser can settle on
+  // its own, so they move while the typing is still happening.
+  const words =
+    t < TYPE ? 0
+      : t < FIX ? Math.round(DRAFT_WORDS * typed)
+        : Math.round(DRAFT_WORDS + (FINAL_WORDS - DRAFT_WORDS) * rewritten);
+  const sources =
+    t < TYPE ? 0
+      : t < FIX ? Math.min(3, Math.floor(typed * 3.6))
+        : rewritten > 0.5 ? 4 : 3;
 
+  const text =
+    t < TYPE ? ''
+      : t < FIX ? FIRST.slice(0, Math.round(FIRST.length * typed))
+        : FIRST + SECOND.slice(0, Math.round(SECOND.length * rewritten));
+
+  const counted = (have: number, need: number, noun: string): View => ({
+    lit: t >= TYPE,
+    status: have >= need ? 'done' : have === 0 ? 'missing' : 'in_progress',
+    detail: `${have.toLocaleString()} of ${need.toLocaleString()} ${noun}`,
+    percent: pct(have, need),
+  });
+
+  /** A criterion only a model can settle: nothing until it has been asked. */
+  const judged = (i: number, first: [Status, string, number], final: [Status, string, number]): View => {
+    const after = t >= DONE + i * 150 ? final : first;
+    return {
+      lit: t >= SCORE + i * 180,
+      status: after[0],
+      detail: after[1],
+      percent: after[2],
+    };
+  };
+
+  const views: Record<string, View> = {
+    thesis: judged(0, ['done', 'Stated in the opening', 90], ['done', 'Stated in the opening', 90]),
+    evidence: counted(sources, NEED_SOURCES, 'sources'),
+    structure: judged(1, ['in_progress', 'No conclusion yet', 60], ['done', 'Conclusion added', 90]),
+    length: counted(words, NEED_WORDS, 'words'),
+    writing: judged(2, ['done', 'Reads cleanly', 90], ['done', 'Reads cleanly', 90]),
+  };
+
+  const ROWS = [
+    { id: 'thesis', name: 'Thesis and argument', pending: 'Clear, arguable position' },
+    { id: 'evidence', name: 'Use of evidence', pending: 'At least four sources' },
+    { id: 'structure', name: 'Structure', pending: 'Intro, body, conclusion' },
+    { id: 'length', name: 'Length', pending: '1,000 to 1,500 words' },
+    { id: 'writing', name: 'Writing quality', pending: 'Grammar and clarity' },
+  ];
+
+  const allDone = t >= DONE + 500;
+  const showCard = t >= NEXT;
   const caption = CAPTIONS.filter(([ms]) => t >= ms).pop()?.[1] ?? CAPTIONS[0][1];
 
   return (
@@ -136,7 +203,10 @@ export function DemoReel() {
             <div className="bg-white rounded-lg shadow-sm h-full px-7 py-5 overflow-hidden">
               <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-4">
                 <span className="text-[10px] text-[#5f6368]">Untitled document</span>
-                <span className="flex items-center gap-1 text-[10px] text-[#5f6368]">
+                <span
+                  className="flex items-center gap-1 text-[10px] transition-colors duration-300"
+                  style={{ color: writing ? INK : MUTED }}
+                >
                   <FileText className="w-3 h-3" style={{ color: GREEN }} />
                   {words.toLocaleString()} words
                   {sources > 0 && ` · ${sources} sources`}
@@ -176,12 +246,12 @@ export function DemoReel() {
               <div className="absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
               <div
                 className="space-y-2 transition-transform duration-700 ease-out"
-                style={{ transform: showNext ? 'translateY(-62px)' : 'none' }}
+                style={{ transform: showCard ? 'translateY(-62px)' : 'none' }}
               >
               {!listed ? (
                 <div
                   className={`rounded-xl border-2 border-dashed p-6 flex flex-col items-center gap-2 transition-colors duration-300 ${
-                    t >= 700 && t < READ ? 'border-[#4285F4] bg-blue-50' : 'border-gray-300 bg-[#F1F3F4]'
+                    t >= 650 && t < READ ? 'border-[#4285F4] bg-blue-50' : 'border-gray-300 bg-[#F1F3F4]'
                   }`}
                 >
                   <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
@@ -196,14 +266,13 @@ export function DemoReel() {
                 </div>
               ) : (
                 ROWS.map((row, i) => {
-                  // Rows arrive one after another, then each one flips to its
-                  // real status on its own beat. Five things changing at once
-                  // reads as a flicker.
-                  const inAt = LIST + i * 220;
-                  const scoreAt = SCORE + i * 220;
+                  // Rows arrive one after another. Five things appearing at
+                  // once reads as a flicker rather than a list being built.
+                  const inAt = LIST + i * 200;
                   if (t < inAt) return <div key={row.id} className="h-[59px]" />;
-                  const lit = t >= scoreAt;
-                  const tone = TONE[row.status];
+
+                  const view = views[row.id];
+                  const tone = TONE[view.status];
                   return (
                     <motion.div
                       key={row.id}
@@ -211,23 +280,23 @@ export function DemoReel() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25 }}
                       className={`rounded-lg border p-2 transition-colors duration-500 ${
-                        lit ? tone.card : 'border-gray-200 bg-white'
+                        view.lit ? tone.card : 'border-gray-200 bg-white'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span
-                          className="w-3 h-3 rounded-sm border flex items-center justify-center shrink-0"
+                          className="w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors duration-300"
                           style={{
-                            borderColor: lit && row.status === 'done' ? GREEN : '#c6c9cc',
-                            background: lit && row.status === 'done' ? GREEN : 'transparent',
+                            borderColor: view.lit && view.status === 'done' ? GREEN : '#c6c9cc',
+                            background: view.lit && view.status === 'done' ? GREEN : 'transparent',
                           }}
                         >
-                          {lit && row.status === 'done' && <Check className="w-2.5 h-2.5 text-white" />}
+                          {view.lit && view.status === 'done' && <Check className="w-2.5 h-2.5 text-white" />}
                         </span>
                         <span className="flex-1 text-[10px] truncate" style={{ color: INK }}>{row.name}</span>
-                        {lit ? (
+                        {view.lit ? (
                           <span
-                            className="text-[8px] px-1.5 py-0.5 rounded-full text-white flex items-center gap-0.5 shrink-0"
+                            className="text-[8px] px-1.5 py-0.5 rounded-full text-white flex items-center gap-0.5 shrink-0 transition-colors duration-300"
                             style={{ background: tone.fill }}
                           >
                             <tone.Icon className="w-2 h-2" />
@@ -241,12 +310,12 @@ export function DemoReel() {
                       </div>
                       <div className="pl-5 mt-1">
                         <p className="text-[9px] truncate" style={{ color: MUTED }}>
-                          {lit ? row.detail : row.pending}
+                          {view.lit ? view.detail : row.pending}
                         </p>
                         <div className="h-1 rounded-full bg-gray-100 mt-1 overflow-hidden">
                           <div
-                            className="h-full rounded-full transition-[width] duration-700 ease-out"
-                            style={{ width: lit ? `${row.percent}%` : '0%', background: tone.fill }}
+                            className="h-full rounded-full transition-[width,background-color] duration-300 ease-out"
+                            style={{ width: view.lit ? `${view.percent}%` : '0%', background: tone.fill }}
                           />
                         </div>
                       </div>
@@ -255,23 +324,28 @@ export function DemoReel() {
                 })
               )}
 
-              <AnimatePresence>
-                {showNext && (
-                  <motion.div
-                    initial={still ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="rounded-lg border-2 border-purple-300 bg-purple-50 p-2 flex gap-2"
-                  >
-                    <Brain className="w-3 h-3 text-purple-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-[10px]" style={{ color: INK }}>Do this next</p>
-                      <p className="text-[9px] leading-snug" style={{ color: MUTED }}>{SUGGESTION}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {showCard && (
+                <motion.div
+                  initial={still ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`rounded-lg border-2 p-2 flex gap-2 transition-colors duration-500 ${
+                    allDone ? 'border-green-300 bg-green-50' : 'border-purple-300 bg-purple-50'
+                  }`}
+                >
+                  {allDone
+                    ? <Check className="w-3 h-3 shrink-0 mt-0.5" style={{ color: GREEN }} />
+                    : <Brain className="w-3 h-3 text-purple-600 shrink-0 mt-0.5" />}
+                  <div>
+                    <p className="text-[10px]" style={{ color: INK }}>
+                      {allDone ? 'All five met' : 'Do this next'}
+                    </p>
+                    <p className="text-[9px] leading-snug" style={{ color: MUTED }}>
+                      {allDone ? '1,040 words, 4 sources, and a conclusion.' : SUGGESTION}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
               </div>
             </div>
 
@@ -292,12 +366,12 @@ export function DemoReel() {
           {/* The file being dragged in. Mounted only for its scene, so it
               replays itself on every loop without any bookkeeping. */}
           <AnimatePresence>
-            {!still && at(DROP, READ) && (
+            {!still && between(DROP, READ) && (
               <motion.div
                 initial={{ opacity: 0, x: -120, y: -40, scale: 0.9, rotate: -8 }}
                 animate={{ opacity: [0, 1, 1, 0], x: 0, y: 0, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 1.3, ease: 'easeInOut', times: [0, 0.2, 0.8, 1] }}
+                transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.2, 0.8, 1] }}
                 className="absolute top-[96px] right-[150px] pointer-events-none"
               >
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 px-3 py-2 flex items-center gap-2">

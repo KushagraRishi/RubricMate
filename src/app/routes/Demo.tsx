@@ -10,7 +10,7 @@ import { useRubricMate } from '../lib/useRubricMate';
 const STEP_LABEL = {
   upload: 'Load a rubric to start',
   checklist: 'Write, then check your draft',
-  progress: 'Keep writing — counts update live',
+  progress: 'Keep writing. Counts update live',
 } as const;
 
 /**

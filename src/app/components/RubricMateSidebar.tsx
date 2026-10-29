@@ -206,7 +206,7 @@ export function RubricMateSidebar({
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <p className="text-xs text-[#5f6368]">or pick one — we'll turn it into a checklist</p>
+                    <p className="text-xs text-[#5f6368]">or pick one and we'll turn it into a checklist</p>
                   </div>
 
                   <input

@@ -5,7 +5,7 @@
  * than a wall of green.
  */
 
-export const SAMPLE_RUBRIC = `HIST 201 — Essay Rubric
+export const SAMPLE_RUBRIC = `HIST 201 Essay Rubric
 Topic: The printing press and the spread of the Reformation
 
 Thesis and argument (25 points)

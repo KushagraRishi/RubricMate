@@ -60,7 +60,7 @@ export function useRubricMate() {
             percent: Math.min(100, Math.round((have / m.value) * 100)),
             result,
             live: over
-              ? `${have.toLocaleString()} words — ${(have - m.value).toLocaleString()} over the limit`
+              ? `${have.toLocaleString()} words, ${(have - m.value).toLocaleString()} over the limit`
               : `${have.toLocaleString()} of ${m.value.toLocaleString()} words`,
           };
         }

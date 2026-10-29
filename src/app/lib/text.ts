@@ -12,13 +12,13 @@ export function countWords(text: string): number {
   return trimmed.split(/\s+/).length;
 }
 
-/** "Smith", "Smith & Jones", "Smith et al." — the name part of a citation. */
+/** "Smith", "Smith & Jones", "Smith et al.": the name part of a citation. */
 const AUTHOR = String.raw`[A-Z][A-Za-z'’-]+(?:\s+(?:et\s+al\.?|(?:&|and)\s+[A-Z][A-Za-z'’-]+))?`;
 
-/** Smith (2019) — the author sits outside the brackets. */
+/** Smith (2019), where the author sits outside the brackets. */
 const NARRATIVE = new RegExp(String.raw`(${AUTHOR})\s*\((\d{4})[a-z]?\)`, 'g');
 
-/** (Smith, 2019) or (Smith 2019) — the whole thing is bracketed. */
+/** (Smith, 2019) or (Smith 2019), where the whole thing is bracketed. */
 const PARENTHETICAL = new RegExp(String.raw`\((${AUTHOR}),?\s+(\d{4})[a-z]?\)`, 'g');
 
 /**

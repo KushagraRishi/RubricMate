@@ -50,7 +50,7 @@ export async function readRubricFile(file: File): Promise<string> {
 
     const text = pages.join('\n\n').trim();
     if (!text) {
-      throw new FileProblem('That PDF has no text in it — it may be a scan. Paste the text instead.');
+      throw new FileProblem('That PDF has no text in it. It may be a scan, so paste the text instead.');
     }
     return text;
   }

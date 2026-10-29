@@ -1,6 +1,6 @@
 import {
   BookCheck, Upload, Check, Clock, X, Brain, RefreshCw, AlertCircle, Info,
-  ChevronDown, ChevronUp, Code, Loader2, Sparkles, RotateCcw, FileDown,
+  ChevronDown, ChevronUp, Loader2, Sparkles, RotateCcw, FileDown,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -72,7 +72,6 @@ export function RubricMateSidebar({
 }: Props) {
   const [manualPasteOpen, setManualPasteOpen] = useState(false);
   const [pasted, setPasted] = useState('');
-  const [rubricStructureOpen, setRubricStructureOpen] = useState(false);
   const [expandedCards, setExpandedCards] = useState<string[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -326,18 +325,9 @@ export function RubricMateSidebar({
                   <Check className="w-4 h-4 text-[#34A853]" />
                   <p className="text-sm text-[#202124]">Rubric read</p>
                 </div>
-                <p className="text-xs text-[#5f6368] mb-3">
+                <p className="text-xs text-[#5f6368]">
                   {criteria.length} {criteria.length === 1 ? 'criterion' : 'criteria'} found
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setRubricStructureOpen(true)}
-                  className="w-full rounded-full text-xs h-7 border-green-300 text-[#34A853] hover:bg-green-50"
-                >
-                  <Code className="w-3 h-3 mr-1.5" />
-                  View Rubric Structure
-                </Button>
               </div>
             ) : (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -348,22 +338,6 @@ export function RubricMateSidebar({
                 <p className="text-xs text-[#5f6368]">Counts update live as you write</p>
               </div>
             )}
-
-            <Dialog open={rubricStructureOpen} onOpenChange={setRubricStructureOpen}>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Rubric Structure</DialogTitle>
-                  <DialogDescription className="text-xs text-[#5f6368]">
-                    What the model pulled out of your rubric.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="bg-gray-50 rounded-lg p-4 max-h-[400px] overflow-y-auto">
-                  <pre className="text-xs text-[#202124] whitespace-pre-wrap font-mono">
-                    {JSON.stringify({ criteria }, null, 2)}
-                  </pre>
-                </div>
-              </DialogContent>
-            </Dialog>
 
             <div>
               <div className="mb-3">
@@ -552,20 +526,6 @@ export function RubricMateSidebar({
           </Button>
         </div>
       )}
-
-      <div className="p-4 border-t border-gray-200 bg-[#F1F3F4]">
-        <div className="flex items-center justify-between text-xs text-[#5f6368]">
-          <span>RubricMate by Kushagra Chaudhary</span>
-          <a
-            href="https://github.com/KushagraRishi"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-[#4285F4] transition-colors"
-          >
-            GitHub
-          </a>
-        </div>
-      </div>
     </div>
   );
 }

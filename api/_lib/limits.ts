@@ -7,8 +7,16 @@ export const LIMITS = {
   draftChars: 25_000,
   questionChars: 600,
   historyTurns: 8,
-  /** Requests per IP per window, when a rate-limit store is configured. */
-  perWindow: 20,
+  /**
+   * Requests per IP per hour.
+   *
+   * A genuine session is roughly one extract, a few checks and a few
+   * questions, so 20 locked people out after two honest goes. 40 leaves room
+   * for that while still bounding the worst case: checking is the only call
+   * that costs real money, at about 0.8c, so a single address cannot run up
+   * more than about 30c an hour.
+   */
+  perWindow: 40,
   windowSeconds: 60 * 60,
 };
 

@@ -83,7 +83,7 @@ function Box({
 /** The one idea worth a picture: what gets counted and what gets read. */
 export function SplitDiagram() {
   return (
-    <Stage viewBox="0 0 640 330" label="Countable criteria are measured in the browser on every keystroke; judgement criteria go to the model when you press check.">
+    <Stage viewBox="0 0 640 330" label="Simple checks like word count run in your browser. Only the checks that need reading go to the AI.">
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
                 markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -106,16 +106,16 @@ export function SplitDiagram() {
 
       <motion.g variants={part} style={svgBox}>
         <Box x={30} y={102} w={260} h={92} fill="#e8f0fe" stroke="#c6dafc" />
-        <text x={160} y={128} textAnchor="middle" fontSize={17} fill={BLUE}>Can be counted</text>
+        <text x={160} y={128} textAnchor="middle" fontSize={17} fill={BLUE}>Simple checks</text>
         <text x={160} y={153} textAnchor="middle" fontSize={15} fill={MUTED}>“At least 1,000 words”</text>
-        <text x={160} y={175} textAnchor="middle" fontSize={15} fill={MUTED}>“Cite four sources”</text>
+        <text x={160} y={175} textAnchor="middle" fontSize={15} fill={MUTED}>“Use at least 4 sources”</text>
       </motion.g>
 
       <motion.g variants={part} style={svgBox}>
         <Box x={350} y={102} w={260} h={92} fill="#f3e8fd" stroke="#e0ccf5" />
-        <text x={480} y={128} textAnchor="middle" fontSize={17} fill="#8430ce">Needs reading</text>
-        <text x={480} y={153} textAnchor="middle" fontSize={15} fill={MUTED}>“Is the thesis arguable?”</text>
-        <text x={480} y={175} textAnchor="middle" fontSize={15} fill={MUTED}>“Is there a conclusion?”</text>
+        <text x={480} y={128} textAnchor="middle" fontSize={17} fill="#8430ce">AI checks</text>
+        <text x={480} y={153} textAnchor="middle" fontSize={15} fill={MUTED}>“Is the thesis clear?”</text>
+        <text x={480} y={175} textAnchor="middle" fontSize={14} fill={MUTED}>“Does the essay have a conclusion?”</text>
       </motion.g>
 
       <motion.g variants={line}>
@@ -127,15 +127,15 @@ export function SplitDiagram() {
 
       <motion.g variants={part} style={svgBox}>
         <Box x={30} y={230} w={260} h={82} fill="#ffffff" stroke={LINE} />
-        <text x={160} y={256} textAnchor="middle" fontSize={16} fill={INK}>In your browser</text>
-        <text x={160} y={279} textAnchor="middle" fontSize={14} fill={MUTED}>every keystroke</text>
-        <text x={160} y={300} textAnchor="middle" fontSize={14} fill={GREEN}>instant · free · exact</text>
+        <text x={160} y={256} textAnchor="middle" fontSize={16} fill={INK}>Checked instantly</text>
+        <text x={160} y={279} textAnchor="middle" fontSize={14} fill={MUTED}>in your browser</text>
+        <text x={160} y={300} textAnchor="middle" fontSize={14} fill={GREEN}>Fast · Free · Accurate</text>
       </motion.g>
 
       <motion.g variants={part} style={svgBox}>
         <Box x={350} y={230} w={260} h={82} fill="#ffffff" stroke={LINE} />
-        <text x={480} y={256} textAnchor="middle" fontSize={16} fill={INK}>One model call</text>
-        <text x={480} y={279} textAnchor="middle" fontSize={14} fill={MUTED}>when you press check</text>
+        <text x={480} y={256} textAnchor="middle" fontSize={16} fill={INK}>Checked by AI</text>
+        <text x={480} y={279} textAnchor="middle" fontSize={14} fill={MUTED}>only when needed</text>
         <text x={480} y={300} textAnchor="middle" fontSize={14} fill={MUTED}>a few seconds · 0.8¢</text>
       </motion.g>
     </Stage>
@@ -151,7 +151,7 @@ export function ArchitectureDiagram() {
   ];
 
   return (
-    <Stage viewBox="0 0 640 300" label="The browser parses files and counts; three serverless functions hold the API key and call Claude.">
+    <Stage viewBox="0 0 640 300" label="Your browser reads the file and counts. The RubricMate server holds the API key and calls the AI models.">
       <defs>
         <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5"
                 markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -161,22 +161,23 @@ export function ArchitectureDiagram() {
 
       {/* Left to right, the way a request actually travels. */}
       <motion.g variants={part} style={svgBox}>
-        <text x={95} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>BROWSER</text>
+        <text x={95} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>YOUR BROWSER</text>
         <Box x={10} y={40} w={170} h={230} fill={SURFACE} stroke={LINE} />
-        <text x={95} y={76} textAnchor="middle" fontSize={15} fill={INK}>PDF, Word → text</text>
-        <text x={95} y={104} textAnchor="middle" fontSize={15} fill={INK}>word + source counts</text>
-        <text x={95} y={132} textAnchor="middle" fontSize={15} fill={INK}>the editor</text>
-        <line x1={30} y1={158} x2={160} y2={158} stroke={LINE} strokeWidth={1} />
-        <text x={95} y={186} textAnchor="middle" fontSize={14} fill={GREEN}>no key here</text>
-        <text x={95} y={224} textAnchor="middle" fontSize={13} fill={MUTED}>parsers load only</text>
-        <text x={95} y={243} textAnchor="middle" fontSize={13} fill={MUTED}>if you upload</text>
+        <text x={95} y={74} textAnchor="middle" fontSize={13} fill={INK}>Reads your PDF or</text>
+        <text x={95} y={92} textAnchor="middle" fontSize={13} fill={INK}>Word file</text>
+        <text x={95} y={128} textAnchor="middle" fontSize={13} fill={INK}>Counts words</text>
+        <text x={95} y={146} textAnchor="middle" fontSize={13} fill={INK}>and sources</text>
+        <text x={95} y={182} textAnchor="middle" fontSize={13} fill={INK}>Shows your document</text>
+        <text x={95} y={200} textAnchor="middle" fontSize={13} fill={INK}>in the editor</text>
+        <line x1={30} y1={224} x2={160} y2={224} stroke={LINE} strokeWidth={1} />
+        <text x={95} y={250} textAnchor="middle" fontSize={13} fill={GREEN}>No AI key here</text>
       </motion.g>
 
       <motion.g variants={part} style={svgBox}>
-        <text x={320} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>VERCEL</text>
+        <text x={320} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>RUBRICMATE SERVER</text>
         <Box x={210} y={40} w={220} h={230} fill="#ffffff" stroke={LINE} />
-        <text x={320} y={76} textAnchor="middle" fontSize={14} fill={MUTED}>serverless functions</text>
-        <text x={320} y={256} textAnchor="middle" fontSize={14} fill={GREEN}>the key lives here</text>
+        <text x={320} y={76} textAnchor="middle" fontSize={14} fill={MUTED}>Handles AI requests securely</text>
+        <text x={320} y={256} textAnchor="middle" fontSize={14} fill={GREEN}>Your API key is never exposed</text>
       </motion.g>
 
       {routes.map((r) => (
@@ -189,9 +190,10 @@ export function ArchitectureDiagram() {
       ))}
 
       <motion.g variants={part} style={svgBox}>
-        <text x={560} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>ANTHROPIC</text>
+        <text x={560} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>AI MODELS</text>
         <Box x={460} y={40} w={170} h={230} fill={SURFACE} stroke={LINE} />
-        <text x={545} y={76} textAnchor="middle" fontSize={14} fill={MUTED}>one model per job</text>
+        <text x={545} y={70} textAnchor="middle" fontSize={13} fill={MUTED}>A different model</text>
+        <text x={545} y={88} textAnchor="middle" fontSize={13} fill={MUTED}>for each task</text>
       </motion.g>
 
       {routes.map((r) => (
@@ -208,15 +210,15 @@ export function ArchitectureDiagram() {
 /** Three bars. The point lands faster than a paragraph would. */
 export function CostChart() {
   const bars = [
-    { label: 'Opus on all three routes', cents: 8.3, color: '#c6dafc' },
-    { label: 'One model per route', cents: 1.97, color: '#8ab4f8' },
-    { label: '+ caching, no reasoning on extract', cents: 1.64, color: BLUE },
+    { label: 'Using the most expensive model for everything', cents: 8.3, color: '#c6dafc' },
+    { label: 'Using the right model for each task', cents: 1.97, color: '#8ab4f8' },
+    { label: 'With additional optimization', cents: 1.64, color: BLUE },
   ];
   const max = 8.3;
   const width = 430;
 
   return (
-    <Stage viewBox="0 0 640 210" label="Cost per session fell from 8.3 cents on Opus throughout to 1.64 cents.">
+    <Stage viewBox="0 0 640 210" label="Cost per session fell from 8.3 cents, using the most expensive model for everything, to 1.64 cents.">
       {bars.map((item, i) => {
         const y = 30 + i * 60;
         const w = (item.cents / max) * width;
@@ -240,7 +242,7 @@ export function CostChart() {
         );
       })}
       <motion.text variants={part} x={0} y={200} fontSize={14} fill={MUTED} style={svgBox}>
-        per session · one rubric, two checks, two questions
+        Per session: 1 rubric, 2 checks, and 2 questions.
       </motion.text>
     </Stage>
   );

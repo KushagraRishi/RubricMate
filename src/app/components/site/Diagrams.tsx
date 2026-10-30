@@ -89,7 +89,7 @@ export function ArchitectureDiagram() {
   ];
 
   return (
-    <Stage viewBox="0 0 640 300" label="Your browser reads the file and counts. The RubricMate server holds the API key and calls the AI models.">
+    <Stage viewBox="0 0 640 300" label="Your browser reads the file and counts. The RubricMate server holds the AI key and calls the AI models.">
       <defs>
         <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5"
                 markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -108,14 +108,14 @@ export function ArchitectureDiagram() {
         <text x={95} y={182} textAnchor="middle" fontSize={13} fill={INK}>Shows your document</text>
         <text x={95} y={200} textAnchor="middle" fontSize={13} fill={INK}>in the editor</text>
         <line x1={30} y1={224} x2={160} y2={224} stroke={LINE} strokeWidth={1} />
-        <text x={95} y={250} textAnchor="middle" fontSize={13} fill={GREEN}>No AI key here</text>
+        <text x={95} y={250} textAnchor="middle" fontSize={13} fill={GREEN}>Updates as you type</text>
       </motion.g>
 
       <motion.g variants={part} style={svgBox}>
         <text x={320} y={24} textAnchor="middle" fontSize={14} fill={MUTED}>RUBRICMATE SERVER</text>
         <Box x={210} y={40} w={220} h={230} fill="#ffffff" stroke={LINE} />
-        <text x={320} y={76} textAnchor="middle" fontSize={14} fill={MUTED}>Handles AI requests securely</text>
-        <text x={320} y={256} textAnchor="middle" fontSize={14} fill={GREEN}>Your API key is never exposed</text>
+        <text x={320} y={76} textAnchor="middle" fontSize={14} fill={MUTED}>Passes your text to the AI</text>
+        <text x={320} y={256} textAnchor="middle" fontSize={14} fill={GREEN}>Keeps the AI key private</text>
       </motion.g>
 
       {routes.map((r) => (

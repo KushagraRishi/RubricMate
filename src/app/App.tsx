@@ -1,6 +1,9 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router';
 import { Landing } from './routes/Landing';
+import { About } from './routes/About';
+import { Privacy } from './routes/Privacy';
 
 /**
  * The landing page is the first thing a stranger loads, and it needs none of
@@ -19,13 +22,23 @@ function Loading() {
   );
 }
 
+/** A new page should start at its top, not wherever the last one was scrolled to. */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/demo" element={<Demo />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="*" element={<Landing />} />
         </Routes>
       </Suspense>

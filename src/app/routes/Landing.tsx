@@ -1,9 +1,9 @@
 import { Link } from 'react-router';
 import { Upload, PenLine, ListChecks } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
-import { SplitDiagram, ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
+import { ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
 import { DemoReel } from '../components/site/DemoReel';
-import { SavingsCallout, StackChips, GoDeeper } from '../components/site/CaseStudy';
+import { RubricExample, SavingsCallout, StackChips, GoDeeper } from '../components/site/CaseStudy';
 import { SiteNav, SiteFooter, Section } from '../components/site/Shell';
 
 const STEPS = [
@@ -64,10 +64,10 @@ export function Landing() {
       <Section
         id="build"
         tint
-        title="Simple checks stay in your browser"
-        lede="Only the parts that need reading go to the AI."
+        title="Check simple things instantly"
+        lede="A rubric is the list of things your assignment is marked on. RubricMate sorts each one."
       >
-        <SplitDiagram />
+        <RubricExample />
       </Section>
 
       <Section title="How it fits together" lede="A React app, three functions, no database.">

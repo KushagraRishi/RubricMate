@@ -1,4 +1,5 @@
 import { motion, useReducedMotion, type Variants } from 'motion/react';
+import { Hash, Brain } from 'lucide-react';
 
 /**
  * The case study half of the landing page.
@@ -130,5 +131,54 @@ export function GoDeeper({ link }: { link: React.ComponentType<any> }) {
         </motion.div>
       ))}
     </Group>
+  );
+}
+
+/* ----------------------------------------------------- the idea, concretely */
+
+const SAMPLE_RULES = [
+  { rule: 'Write at least 1,000 words', by: 'browser' },
+  { rule: 'Use at least 4 sources', by: 'browser' },
+  { rule: 'Have a clear thesis', by: 'ai' },
+  { rule: 'End with a conclusion', by: 'ai' },
+] as const;
+
+/**
+ * The split, shown on a rubric a stranger can read. A diagram of "simple
+ * checks" and "AI checks" only makes sense to someone who already knows what
+ * RubricMate does, so this starts from four rules anyone has been marked on.
+ */
+export function RubricExample() {
+  return (
+    <div>
+      <Group className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-100 bg-[#fafbfc]">
+          <p className="text-xs" style={{ color: MUTED }}>A sample rubric</p>
+        </div>
+        {SAMPLE_RULES.map(({ rule, by }) => {
+          const ai = by === 'ai';
+          const Icon = ai ? Brain : Hash;
+          return (
+            <motion.div
+              key={rule}
+              variants={item}
+              className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 last:border-b-0"
+            >
+              <p className="text-sm" style={{ color: INK }}>{rule}</p>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs shrink-0"
+                style={ai ? { background: '#f3e8fd', color: '#8430ce' } : { background: '#e8f0fe', color: BLUE }}
+              >
+                <Icon className="w-3 h-3" />
+                {ai ? 'Read by AI' : 'Counted in your browser'}
+              </span>
+            </motion.div>
+          );
+        })}
+      </Group>
+      <p className="text-xs mt-4" style={{ color: MUTED }}>
+        Counting is instant and free. Reading takes a few seconds and costs under 1¢.
+      </p>
+    </div>
   );
 }

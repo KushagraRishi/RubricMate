@@ -80,7 +80,7 @@ export function Landing() {
           </div>
           <div className="flex items-center gap-2">
             <a href="#build" className="hidden sm:inline-block text-sm text-[#5f6368] hover:text-[#4285F4] transition-colors px-3 py-2">
-              How it was built
+              How it works
             </a>
             <Link to="/demo">
               <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full px-5">Try it</Button>
@@ -97,10 +97,11 @@ export function Landing() {
           transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           <h1 className="text-[#202124] mb-4 text-4xl leading-tight">
-            Turn a rubric into a checklist you can tick off
+            Know exactly what your assignment is missing
           </h1>
-          <p className="text-[#5f6368] mb-8 max-w-[480px] mx-auto">
-            Write your draft and see what you have met, what is half done, and what to fix next.
+          <p className="text-[#5f6368] mb-8 max-w-[560px] mx-auto">
+            Upload your rubric and start writing. RubricMate shows what you have completed,
+            what still needs work, and what to fix next.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link to="/demo">
@@ -111,7 +112,7 @@ export function Landing() {
             </Link>
             <a href="#build">
               <Button variant="outline" className="rounded-full px-7 h-11 border-gray-300">
-                How it was built
+                See how it works
               </Button>
             </a>
           </div>

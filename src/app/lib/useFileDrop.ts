@@ -7,17 +7,24 @@ import { useEffect, useRef, useState } from 'react';
  * file at, and the whole page is an easier target. And the browser's own
  * response to a dropped file is to navigate away and show it -- so the drop
  * has to be cancelled somewhere whatever we do with it.
+ *
+ * `zoneOf` names the part of the screen the pointer is over, so one drag can
+ * mean two things: the same file let go over the document or over the sidebar.
  */
-export function useFileDrop(onFile: (file: File) => void, enabled = true) {
-  const [over, setOver] = useState(false);
+export function useFileDrop<Z extends string>(
+  onFile: (file: File, zone: Z) => void,
+  zoneOf: (e: DragEvent) => Z,
+  enabled = true,
+) {
+  const [zone, setZone] = useState<Z | null>(null);
 
-  // The callback is rebuilt on every render; the listeners should not be.
-  const latest = useRef(onFile);
-  latest.current = onFile;
+  // The callbacks are rebuilt on every render; the listeners should not be.
+  const latest = useRef({ onFile, zoneOf });
+  latest.current = { onFile, zoneOf };
 
   useEffect(() => {
     if (!enabled) {
-      setOver(false);
+      setZone(null);
       return;
     }
 
@@ -30,42 +37,45 @@ export function useFileDrop(onFile: (file: File) => void, enabled = true) {
       if (!isFile(e)) return;
       e.preventDefault();
       depth += 1;
-      setOver(true);
+      setZone(latest.current.zoneOf(e));
     };
 
-    const over_ = (e: DragEvent) => {
+    // dragover fires every few milliseconds; setting the same zone again is a
+    // no-op for React, so this only re-renders when the pointer crosses over.
+    const over = (e: DragEvent) => {
       if (!isFile(e)) return;
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      setZone(latest.current.zoneOf(e));
     };
 
     const leave = (e: DragEvent) => {
       if (!isFile(e)) return;
       depth = Math.max(0, depth - 1);
-      if (depth === 0) setOver(false);
+      if (depth === 0) setZone(null);
     };
 
     const drop = (e: DragEvent) => {
       if (!isFile(e)) return;
       e.preventDefault();
       depth = 0;
-      setOver(false);
+      setZone(null);
       const file = e.dataTransfer?.files?.[0];
-      if (file) latest.current(file);
+      if (file) latest.current.onFile(file, latest.current.zoneOf(e));
     };
 
     window.addEventListener('dragenter', enter);
-    window.addEventListener('dragover', over_);
+    window.addEventListener('dragover', over);
     window.addEventListener('dragleave', leave);
     window.addEventListener('drop', drop);
 
     return () => {
       window.removeEventListener('dragenter', enter);
-      window.removeEventListener('dragover', over_);
+      window.removeEventListener('dragover', over);
       window.removeEventListener('dragleave', leave);
       window.removeEventListener('drop', drop);
     };
   }, [enabled]);
 
-  return over;
+  return zone;
 }

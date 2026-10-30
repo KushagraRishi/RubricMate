@@ -1,7 +1,7 @@
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   Download, Sparkles, Baseline, Highlighter, ImagePlus, ChevronDown,
-  FileText, FileType, FileDown,
+  FileText, FileType, FileDown, FolderOpen,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -16,6 +16,8 @@ import { exportPdf, exportDocx, exportPlainText } from '../lib/exportDoc';
 interface Props {
   draft: string;
   onDraftChange: (text: string) => void;
+  /** Opens an assignment saved as PDF, Word or text in place of the draft. */
+  onOpenFile: (file: File) => void;
 }
 
 /** Fonts people actually ask for by name, in the order they look for them. */
@@ -44,7 +46,8 @@ const HIGHLIGHTS = [
  * Every control left in the toolbar works; the ones that could only ever have
  * been decorative were removed rather than left there to be clicked.
  */
-export function GoogleDocMock({ draft, onDraftChange }: Props) {
+export function GoogleDocMock({ draft, onDraftChange, onOpenFile }: Props) {
+  const opener = useRef<HTMLInputElement>(null);
   const editor = useRef<HTMLDivElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const savedRange = useRef<Range | null>(null);
@@ -204,6 +207,28 @@ export function GoogleDocMock({ draft, onDraftChange }: Props) {
             />
 
             <div className="flex items-center gap-2 ml-auto">
+              <input
+                ref={opener}
+                type="file"
+                accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  // Cleared so picking the same file twice still fires.
+                  e.target.value = '';
+                  if (file) onOpenFile(file);
+                }}
+              />
+              <Button
+                onClick={() => opener.current?.click()}
+                size="sm"
+                variant="outline"
+                className="rounded-full h-8 px-4 border-gray-300"
+                title="Open your assignment as a PDF, Word or text file"
+              >
+                <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
+                Open
+              </Button>
               <Button
                 onClick={() => onDraftChange(SAMPLE_DRAFT)}
                 size="sm"

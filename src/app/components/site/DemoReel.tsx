@@ -44,7 +44,7 @@ const CAPTIONS: [number, string][] = [
   [DROP, 'Add the rubric'],
   [READ, 'It reads the rubric'],
   [LIST, 'You get a checklist'],
-  [TYPE, 'Write your assignment. Words and sources tick off'],
+  [TYPE, 'Drop or write your assignment. Words and sources tick off'],
   [CHECK, 'The AI reads the rest'],
   [SCORE, 'A score and a reason for each line'],
   [NEXT, 'And one thing to do next'],

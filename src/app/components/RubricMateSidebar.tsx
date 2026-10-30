@@ -1,6 +1,6 @@
 import {
   BookCheck, Upload, Check, Clock, X, Brain, RefreshCw, AlertCircle, Info,
-  ChevronDown, ChevronUp, Loader2, Sparkles, RotateCcw, FileDown,
+  ChevronDown, ChevronUp, Loader2, Sparkles, RotateCcw,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -17,7 +17,6 @@ import type { Criterion } from '../lib/types';
 import type { Row, Step } from '../lib/useRubricMate';
 import { SAMPLE_RUBRIC } from '../lib/samples';
 import { readRubricFile, FileProblem } from '../lib/readFile';
-import { useFileDrop } from '../lib/useFileDrop';
 
 interface Props {
   step: Step;
@@ -92,33 +91,9 @@ export function RubricMateSidebar({
   const extracting = busy === 'extract';
   const checking = busy === 'check';
 
-  // Enabled on every step, not only the empty one. A rubric dropped later just
-  // replaces the checklist -- and if we ignored it, the browser would open the
-  // file and throw the session away.
-  const dragging = useFileDrop(handleFile, !extracting);
 
   return (
-    <div className="w-[360px] shrink-0 bg-white border-l border-gray-200 flex flex-col min-h-0 shadow-lg">
-      {/* Covers the whole window, so the file can be let go anywhere. */}
-      <AnimatePresence>
-        {dragging && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm p-6 pointer-events-none"
-          >
-            <div className="w-full h-full border-2 border-dashed border-[#4285F4] rounded-2xl bg-blue-50/60 flex flex-col items-center justify-center gap-3">
-              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm">
-                <FileDown className="w-7 h-7 text-[#4285F4]" />
-              </div>
-              <p className="text-[#202124]">Drop your rubric</p>
-              <p className="text-sm text-[#5f6368]">PDF, Word, or plain text</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div data-drop="rubric" className="w-[360px] shrink-0 bg-white border-l border-gray-200 flex flex-col min-h-0 shadow-lg">
 
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
@@ -175,9 +150,7 @@ export function RubricMateSidebar({
           <>
             <div>
               <Card
-                className={`border-2 border-dashed p-8 rounded-xl transition-colors ${
-                  dragging ? 'border-[#4285F4] bg-blue-50' : 'border-gray-300 bg-[#F1F3F4]'
-                }`}
+                className="border-2 border-dashed p-8 rounded-xl border-gray-300 bg-[#F1F3F4]"
               >
                 <div className="flex flex-col items-center text-center space-y-4">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
@@ -188,11 +161,7 @@ export function RubricMateSidebar({
                   <div>
                     <div className="flex items-center justify-center gap-1.5 mb-1">
                       <p className="text-sm text-[#202124]">
-                        {extracting
-                          ? 'Reading your rubric…'
-                          : dragging
-                            ? 'Drop it anywhere'
-                            : 'Drop your rubric here'}
+                        {extracting ? 'Reading your rubric…' : 'Drop your rubric here'}
                       </p>
                       <TooltipProvider>
                         <Tooltip>

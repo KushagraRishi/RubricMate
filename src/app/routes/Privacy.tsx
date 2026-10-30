@@ -1,5 +1,4 @@
-import { motion } from 'motion/react';
-import { SiteNav, SiteFooter, Section, PageHead } from '../components/site/Shell';
+import { SitePage, SiteNav, SiteFooter, Section, PageHead } from '../components/site/Shell';
 import { Privacy as PrivacyList } from '../components/site/CaseStudy';
 
 const LIMITS = [
@@ -10,31 +9,29 @@ const LIMITS = [
 
 export function Privacy() {
   return (
-    <div className="min-h-screen bg-white">
+    <SitePage>
       <SiteNav />
       <PageHead
         title="Privacy and limits"
         lede="Nothing here needs an account, and nothing is kept."
       />
 
-      <Section tint title="Privacy">
+      <Section band title="Privacy">
         <PrivacyList />
       </Section>
 
       <Section title="What RubricMate does not do">
-        <div className="space-y-3">
+        <ul className="plain set">
           {LIMITS.map(([head, tail]) => (
-            <motion.div key={head} className="flex gap-3 items-baseline">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4] shrink-0 translate-y-[-2px]" />
-              <p className="text-sm text-[#5f6368]">
-                <span className="text-[#202124]">{head}</span> {tail}
-              </p>
-            </motion.div>
+            <li key={head}>
+              <h3>{head}</h3>
+              <p>{tail}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       </Section>
 
       <SiteFooter />
-    </div>
+    </SitePage>
   );
 }

@@ -22,10 +22,10 @@ import { SAMPLE_DRAFT } from '../../lib/samples';
  * at different times is the clearest way to show the idea the app is built on.
  */
 
-const BLUE = '#4285F4';
-const GREEN = '#34A853';
-const INK = '#202124';
-const MUTED = '#5f6368';
+const BLUE = 'var(--reel-blue)';
+const GREEN = 'var(--reel-green)';
+const INK = 'var(--reel-ink)';
+const MUTED = 'var(--reel-muted)';
 
 /** Scene boundaries in ms. One clock, everything derived from it. */
 const DROP = 0;
@@ -56,9 +56,9 @@ const CAPTIONS: [number, string][] = [
 type Status = 'done' | 'in_progress' | 'missing';
 
 const TONE = {
-  done: { card: 'border-green-200 bg-green-50', fill: GREEN, label: 'Done', Icon: Check },
-  in_progress: { card: 'border-blue-200 bg-blue-50', fill: BLUE, label: 'In progress', Icon: Clock },
-  missing: { card: 'border-red-200 bg-red-50', fill: '#f87171', label: 'Missing', Icon: X },
+  done: { card: 'border-[var(--reel-green-line)] bg-[var(--reel-green-wash)]', fill: GREEN, label: 'Done', Icon: Check },
+  in_progress: { card: 'border-[var(--reel-blue-line)] bg-[var(--reel-blue-wash)]', fill: BLUE, label: 'In progress', Icon: Clock },
+  missing: { card: 'border-[var(--reel-red-line)] bg-[var(--reel-red-wash)]', fill: 'var(--reel-red)', label: 'Missing', Icon: X },
 } as const;
 
 /** Where the first draft lands, and where the revision takes it. */
@@ -176,38 +176,22 @@ export function DemoReel() {
   const caption = CAPTIONS.filter(([ms]) => t >= ms).pop()?.[1] ?? CAPTIONS[0][1];
 
   return (
-    <div className="max-w-[980px] mx-auto px-8">
-      <div
-        ref={frame}
-        className="rounded-2xl border border-gray-200 shadow-xl overflow-hidden bg-white"
-      >
-        {/* Browser chrome, so it reads as a screen and not a drawing. */}
-        <div className="h-9 bg-[#F1F3F4] border-b border-gray-200 flex items-center px-4 gap-2">
-          <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-          </div>
-          <div className="flex-1 flex justify-center">
-            <div className="bg-white rounded-full px-3 py-0.5 text-[10px] text-[#5f6368] border border-gray-200">
-              rubric-mate.vercel.app/demo
-            </div>
-          </div>
-        </div>
-
+    <div className="reel reel-frame">
+      <div className="crop">
+      <div ref={frame} className="reel-sheet" data-kind="product">
         <div className="flex h-[500px] relative">
           {/* The document */}
-          <div className="flex-1 bg-[#F1F3F4] p-5 overflow-hidden">
-            <div className="bg-white rounded-lg shadow-sm h-full px-7 py-5 overflow-hidden">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-4">
-                <span className="text-[10px] text-[#5f6368]">Untitled document</span>
+          <div className="flex-1 bg-[var(--reel-canvas)] p-5 overflow-hidden">
+            <div className="bg-[var(--reel-surface)] rounded-lg shadow-sm h-full px-7 py-5 overflow-hidden">
+              <div className="flex items-center justify-between border-b border-[var(--reel-line-3)] pb-2 mb-4">
+                <span className="text-[10px] text-[var(--reel-muted)]">Untitled document</span>
                 <span
                   className="flex items-center gap-1 text-[10px] transition-colors duration-300"
                   style={{ color: writing ? INK : MUTED }}
                 >
                   <FileText className="w-3 h-3" style={{ color: GREEN }} />
                   {words.toLocaleString()} words
-                  {sources > 0 && ` · ${sources} sources`}
+                  {sources > 0 && `, ${sources} sources`}
                 </span>
               </div>
 
@@ -216,11 +200,11 @@ export function DemoReel() {
                   <p className="text-[11px] mb-2" style={{ color: INK }}>{TITLE}</p>
                   <p className="text-[10px] leading-[1.7]" style={{ color: MUTED }}>
                     {text}
-                    {writing && <span className="inline-block w-[1px] h-[10px] align-middle bg-[#4285F4] animate-pulse ml-px" />}
+                    {writing && <span className="inline-block w-[1px] h-[10px] align-middle bg-[var(--reel-blue)] animate-pulse motion-reduce:animate-none ml-px" />}
                   </p>
                 </>
               ) : (
-                <p className="text-[10px]" style={{ color: '#9aa0a6' }}>
+                <p className="text-[10px]" style={{ color: 'var(--reel-faint)' }}>
                   Start writing your assignment here…
                 </p>
               )}
@@ -228,10 +212,10 @@ export function DemoReel() {
           </div>
 
           {/* The sidebar */}
-          <div className="w-[272px] border-l border-gray-200 bg-white flex flex-col">
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+          <div className="w-[272px] border-l border-[var(--reel-line)] bg-[var(--reel-surface)] flex flex-col">
+            <div className="px-4 py-3 border-b border-[var(--reel-line)] flex items-center gap-2">
               <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: BLUE }}>
-                <BookCheck className="w-3.5 h-3.5 text-white" />
+                <BookCheck className="w-3.5 h-3.5 text-[var(--reel-on-accent)]" />
               </div>
               <div>
                 <p className="text-[11px]" style={{ color: INK }}>RubricMate</p>
@@ -241,7 +225,7 @@ export function DemoReel() {
 
             <div className="flex-1 p-4 overflow-hidden relative">
               {/* The row that scrolls out fades rather than being sliced. */}
-              <div className="absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
+              <div className="absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-[var(--reel-surface)] to-transparent z-10 pointer-events-none" />
               <div
                 className="space-y-2 transition-transform duration-700 ease-out"
                 style={{ transform: showCard ? 'translateY(-62px)' : 'none' }}
@@ -249,12 +233,12 @@ export function DemoReel() {
               {!listed ? (
                 <div
                   className={`rounded-xl border-2 border-dashed p-6 flex flex-col items-center gap-2 transition-colors duration-300 ${
-                    t >= 650 && t < READ ? 'border-[#4285F4] bg-blue-50' : 'border-gray-300 bg-[#F1F3F4]'
+                    t >= 650 && t < READ ? 'border-[var(--reel-blue)] bg-[var(--reel-blue-wash)]' : 'border-[var(--reel-line-2)] bg-[var(--reel-canvas)]'
                   }`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full bg-[var(--reel-surface)] flex items-center justify-center">
                     {reading
-                      ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: BLUE }} />
+                      ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" style={{ color: BLUE }} />
                       : <FileDown className="w-4 h-4" style={{ color: BLUE }} />}
                   </div>
                   <p className="text-[11px]" style={{ color: INK }}>
@@ -278,30 +262,30 @@ export function DemoReel() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25 }}
                       className={`rounded-lg border p-2 transition-colors duration-500 ${
-                        view.lit ? tone.card : 'border-gray-200 bg-white'
+                        view.lit ? tone.card : 'border-[var(--reel-line)] bg-[var(--reel-surface)]'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span
                           className="w-3 h-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors duration-300"
                           style={{
-                            borderColor: view.lit && view.status === 'done' ? GREEN : '#c6c9cc',
+                            borderColor: view.lit && view.status === 'done' ? GREEN : 'var(--reel-faint)',
                             background: view.lit && view.status === 'done' ? GREEN : 'transparent',
                           }}
                         >
-                          {view.lit && view.status === 'done' && <Check className="w-2.5 h-2.5 text-white" />}
+                          {view.lit && view.status === 'done' && <Check className="w-2.5 h-2.5 text-[var(--reel-on-accent)]" />}
                         </span>
                         <span className="flex-1 text-[10px] truncate" style={{ color: INK }}>{row.name}</span>
                         {view.lit ? (
                           <span
-                            className="text-[8px] px-1.5 py-0.5 rounded-full text-white flex items-center gap-0.5 shrink-0 transition-colors duration-300"
+                            className="text-[8px] px-1.5 py-0.5 rounded-full text-[var(--reel-on-accent)] flex items-center gap-0.5 shrink-0 transition-colors duration-300"
                             style={{ background: tone.fill }}
                           >
                             <tone.Icon className="w-2 h-2" />
                             {tone.label}
                           </span>
                         ) : (
-                          <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 shrink-0">
+                          <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[var(--reel-amber-wash)] text-[var(--reel-amber)] shrink-0">
                             Pending
                           </span>
                         )}
@@ -310,10 +294,10 @@ export function DemoReel() {
                         <p className="text-[9px] truncate" style={{ color: MUTED }}>
                           {view.lit ? view.detail : row.pending}
                         </p>
-                        <div className="h-1 rounded-full bg-gray-100 mt-1 overflow-hidden">
+                        <div className="h-1 rounded-full bg-[var(--reel-track)] mt-1 overflow-hidden">
                           <div
-                            className="h-full rounded-full transition-[width,background-color] duration-300 ease-out"
-                            style={{ width: view.lit ? `${view.percent}%` : '0%', background: tone.fill }}
+                            className="h-full rounded-full origin-left transition-transform duration-300 ease-out"
+                            style={{ transform: `scaleX(${view.lit ? view.percent / 100 : 0})`, background: tone.fill }}
                           />
                         </div>
                       </div>
@@ -328,12 +312,12 @@ export function DemoReel() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                   className={`rounded-lg border-2 p-2 flex gap-2 transition-colors duration-500 ${
-                    allDone ? 'border-green-300 bg-green-50' : 'border-purple-300 bg-purple-50'
+                    allDone ? 'border-[var(--reel-green-line-2)] bg-[var(--reel-green-wash)]' : 'border-[var(--reel-purple-line)] bg-[var(--reel-purple-wash)]'
                   }`}
                 >
                   {allDone
                     ? <Check className="w-3 h-3 shrink-0 mt-0.5" style={{ color: GREEN }} />
-                    : <Brain className="w-3 h-3 text-purple-600 shrink-0 mt-0.5" />}
+                    : <Brain className="w-3 h-3 text-[var(--reel-purple)] shrink-0 mt-0.5" />}
                   <div>
                     <p className="text-[10px]" style={{ color: INK }}>
                       {allDone ? 'All five met' : 'Do this next'}
@@ -348,13 +332,13 @@ export function DemoReel() {
             </div>
 
             {listed && (
-              <div className="px-4 py-3 border-t border-gray-200">
+              <div className="px-4 py-3 border-t border-[var(--reel-line)]">
                 <div
-                  className="rounded-full h-7 flex items-center justify-center gap-1.5 text-[10px] text-white transition-transform duration-200"
-                  style={{ background: checking ? '#3367D6' : BLUE, transform: checking ? 'scale(0.97)' : 'none' }}
+                  className="rounded-full h-7 flex items-center justify-center gap-1.5 text-[10px] text-[var(--reel-on-accent)] transition-transform duration-200"
+                  style={{ background: checking ? 'var(--reel-blue-press)' : BLUE, transform: checking ? 'scale(0.97)' : 'none' }}
                 >
                   {checking
-                    ? <><Loader2 className="w-3 h-3 animate-spin" />Checking your draft…</>
+                    ? <><Loader2 className="w-3 h-3 animate-spin motion-reduce:animate-none" />Checking your draft…</>
                     : <><RefreshCw className="w-3 h-3" />{scored ? 'Check again' : 'Check my draft'}</>}
                 </div>
               </div>
@@ -372,7 +356,7 @@ export function DemoReel() {
                 transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.2, 0.8, 1] }}
                 className="absolute top-[96px] right-[150px] pointer-events-none"
               >
-                <div className="bg-white rounded-lg shadow-lg border border-gray-200 px-3 py-2 flex items-center gap-2">
+                <div className="bg-[var(--reel-surface)] rounded-lg border border-[var(--reel-line)] px-3 py-2 flex items-center gap-2">
                   <FileText className="w-4 h-4" style={{ color: BLUE }} />
                   <span className="text-[10px]" style={{ color: INK }}>HIST-201-rubric.docx</span>
                 </div>
@@ -381,29 +365,29 @@ export function DemoReel() {
           </AnimatePresence>
         </div>
 
-        {/* Where we are in the loop. */}
-        <div className="h-0.5 bg-gray-100">
+        {/* Where we are in the loop. Scaled, never resized. */}
+        <div className="h-0.5 bg-[var(--reel-track)]">
           <div
-            className="h-full"
-            style={{ width: `${(t / LOOP) * 100}%`, background: BLUE, transition: 'width 40ms linear' }}
+            className="h-full origin-left"
+            style={{ transform: `scaleX(${t / LOOP})`, background: BLUE }}
           />
         </div>
       </div>
+      </div>
 
-      <div className="flex items-center gap-3 mt-2">
-          {!still && (
-            <button
-              onClick={() => setPlaying((p) => !p)}
-              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shrink-0"
-              aria-label={playing ? 'Pause the demo' : 'Play the demo'}
-            >
-              {playing
-                ? <Pause className="w-3.5 h-3.5" style={{ color: MUTED }} />
-                : <Play className="w-3.5 h-3.5 ml-0.5" style={{ color: MUTED }} />}
-            </button>
-          )}
-        <p className="text-sm" style={{ color: MUTED }}>
-          <span style={{ color: INK }}>{caption}</span>
+      <div className="reel-foot">
+        {!still && (
+          <button
+            type="button"
+            onClick={() => setPlaying((p) => !p)}
+            className="reel-toggle"
+            aria-label={playing ? 'Pause the demo' : 'Play the demo'}
+          >
+            {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+          </button>
+        )}
+        <p>
+          <strong>{caption}</strong>
           {'. '}Real output, no sign-up.
         </p>
       </div>

@@ -13,3 +13,6 @@ dist
 
 # tsc emit strays
 src/**/*.js
+
+# Hallmark build records, local only
+.hallmark/

@@ -1,72 +1,26 @@
+import { readDocument, pdfFamily, wordFamily, type Block, type Run } from './docModel';
+
 /**
- * Taking the draft out of the app.
+ * Taking the draft out of the app: plain text, a Word file, a PDF.
  *
- * Three ways out: plain text, a Word file and a PDF. All three are built from
- * what is already in the browser, because a document editor that drags a PDF
- * renderer and a docx writer into the bundle costs the user hundreds of
- * kilobytes on first load for something they do once at the end.
+ * Both of the rich formats are built here rather than handed to the browser,
+ * so clicking Export downloads a file instead of opening a dialog. The two
+ * libraries that do the real work are imported only when their format is
+ * chosen, which keeps them off the first load for everyone who never exports.
  */
+
+export interface Look {
+  lineHeight?: number;
+}
 
 /** Windows, macOS and Linux between them dislike all of these in a filename. */
 const ILLEGAL = /[\\/:*?"<>|\u0000-\u001f]/g;
 
-/**
- * Titles are free text, so they can be empty, padded, or full of characters
- * that would break the download. Capped at 80 so the saved name stays readable
- * in a file picker rather than wrapping across it.
- */
 function safeFileName(title: string): string {
   const cleaned = title.replace(ILLEGAL, '').replace(/\s+/g, ' ').trim();
   return cleaned.slice(0, 80).trim() || 'document';
 }
 
-/**
- * What the document looks like on screen, so the exports can match it. Line
- * spacing in particular is set on the editor's container rather than inside
- * the text, so it is invisible to innerHTML and has to be carried across by
- * hand. Getting that wrong matters more than it sounds: "double spaced" is one
- * of the commonest things a rubric asks for.
- */
-export interface Look {
-  lineHeight?: number;
-  fontFamily?: string;
-}
-
-const DEFAULT_LOOK = {
-  lineHeight: 1.5,
-  fontFamily: "Georgia, 'Times New Roman', serif",
-};
-
-/** A font stack read off the page is trusted input, but it still ends up inside
- * a <style> block, so anything that could close that block early is dropped. */
-function cssSafe(value: string): string {
-  return value.replace(/[<>{};]/g, '').slice(0, 200);
-}
-
-function look(given: Look | undefined) {
-  const lineHeight = given?.lineHeight;
-  return {
-    lineHeight: typeof lineHeight === 'number' && lineHeight > 0 ? lineHeight : DEFAULT_LOOK.lineHeight,
-    // A stack read off the page starts with names only a browser knows, such
-    // as ui-sans-serif. The PDF renders in that same browser so it matches
-    // exactly, but Word would find nothing it recognises and fall back to
-    // whatever it likes, so a real name is appended for it to land on.
-    fontFamily: given?.fontFamily
-      ? `${cssSafe(given.fontFamily)}, Calibri, Arial, sans-serif`
-      : DEFAULT_LOOK.fontFamily,
-  };
-}
-
-/** Titles go into generated markup, so they have to be escaped on the way in. */
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-/** One place for the anchor dance, so a failure cannot leak an object URL. */
 function downloadBlob(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   try {
@@ -88,130 +42,187 @@ export function exportPlainText(title: string, text: string): void {
   downloadBlob(blob, `${safeFileName(title)}.txt`);
 }
 
-/**
- * This is not real OOXML. It is an HTML document with the Office namespaces and
- * a WordSection wrapper, the format Word has opened since Word 2000 and which
- * Pages and Google Docs also import. Writing genuine .docx would mean zipping
- * XML parts and translating every inline style the editor produces, and the
- * translation is where fidelity is lost: bold and italic would survive, but
- * colours, highlights, font choices and base64 images would need mapping one by
- * one. Word reads those straight out of HTML, so the cheap path is also the
- * faithful one. The cost is the .doc extension and a format warning on opening
- * in some versions of Word, which is a fair trade for zero dependencies.
- */
-export function exportWordDoc(title: string, html: string, style?: Look): void {
-  const heading = escapeHtml(title.trim() || 'Document');
-  const { lineHeight, fontFamily } = look(style);
-  const markup = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:w="urn:schemas-microsoft-com:office:word"
-      xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-  <meta charset="utf-8">
-  <title>${heading}</title>
-  <!--[if gte mso 9]><xml>
-    <w:WordDocument>
-      <w:View>Print</w:View>
-      <w:Zoom>100</w:Zoom>
-      <w:DoNotOptimizeForBrowser/>
-    </w:WordDocument>
-  </xml><![endif]-->
-  <style>
-    @page WordSection1 {
-      size: 21cm 29.7cm;
-      margin: 1in 1in 1in 1in;
-    }
-    div.WordSection1 { page: WordSection1; }
-    body {
-      font-family: ${fontFamily};
-      font-size: 12pt;
-      line-height: ${lineHeight};
-      color: #000;
-    }
-    h1 { font-size: 20pt; margin: 0 0 16pt; }
-    img { max-width: 100%; height: auto; }
-  </style>
-</head>
-<body>
-  <div class="WordSection1">
-    <h1>${heading}</h1>
-    ${html}
-  </div>
-</body>
-</html>`;
+const rgb = (hex: string): [number, number, number] => [
+  parseInt(hex.slice(1, 3), 16),
+  parseInt(hex.slice(3, 5), 16),
+  parseInt(hex.slice(5, 7), 16),
+];
 
-  // The byte order mark is what makes Word trust the utf-8 declaration.
-  const blob = new Blob(['﻿', markup], { type: 'application/msword' });
-  downloadBlob(blob, `${safeFileName(title)}.doc`);
+/**
+ * A real PDF, written as text rather than a picture of text.
+ *
+ * The obvious route is html2canvas, which screenshots the page and drops the
+ * bitmap in. That gives a file several megabytes heavy, blurry when zoomed,
+ * and impossible to select or search. Laying the runs out by hand is more
+ * code, but the words stay words.
+ */
+export async function exportPdf(title: string, editor: HTMLElement, look?: Look): Promise<void> {
+  const { jsPDF } = await import('jspdf');
+  const blocks = readDocument(editor);
+  const spacing = look?.lineHeight && look.lineHeight > 0 ? look.lineHeight : 1.5;
+
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = 56;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const right = pageWidth - margin;
+  const maxWidth = right - margin;
+
+  let y = margin;
+  const room = (height: number) => {
+    if (y + height <= pageHeight - margin) return;
+    doc.addPage();
+    y = margin;
+  };
+
+  const heading = title.trim() || 'Document';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(0, 0, 0);
+  doc.text(heading, margin, y + 20);
+  y += 44;
+
+  const style = (run: Run) => {
+    const weight = run.bold && run.italic ? 'bolditalic' : run.bold ? 'bold' : run.italic ? 'italic' : 'normal';
+    doc.setFont(pdfFamily(run.family), weight);
+    doc.setFontSize(run.sizePt);
+    doc.setTextColor(...rgb(run.color));
+  };
+
+  for (const block of blocks) {
+    if (block.kind === 'image') {
+      const scale = Math.min(1, maxWidth / block.width);
+      const w = block.width * scale;
+      const h = block.height * scale;
+      room(h + 12);
+      try {
+        doc.addImage(block.src, margin, y, w, h);
+      } catch {
+        // An image the renderer will not take should not lose the essay.
+      }
+      y += h + 12;
+      continue;
+    }
+
+    const tallest = Math.max(...block.runs.map((r) => r.sizePt), 12);
+    const lineHeight = tallest * spacing;
+    // Lay each line out by hand, because a line can change font mid-way and
+    // the width of what has already been placed decides where the break goes.
+    let x = margin;
+    const indent = () => {
+      if (block.align === 'left') return margin;
+      return margin;
+    };
+
+    const lines: { run: Run; text: string; x: number; width: number }[][] = [[]];
+    for (const run of block.runs) {
+      style(run);
+      for (const token of run.text.split(/(\s+)/)) {
+        if (!token) continue;
+        const width = doc.getTextWidth(token);
+        const line = lines[lines.length - 1];
+        const used = line.reduce((n, piece) => n + piece.width, 0);
+        if (used + width > maxWidth && !/^\s+$/.test(token) && used > 0) {
+          lines.push([{ run, text: token, x: 0, width }]);
+        } else {
+          line.push({ run, text: token, x: 0, width });
+        }
+      }
+    }
+
+    for (const line of lines) {
+      if (!line.length) continue;
+      room(lineHeight);
+      const used = line.reduce((n, piece) => n + piece.width, 0);
+      x = block.align === 'center' ? margin + (maxWidth - used) / 2
+        : block.align === 'right' ? right - used
+          : indent();
+      for (const piece of line) {
+        style(piece.run);
+        if (piece.run.highlight) {
+          doc.setFillColor(...rgb(piece.run.highlight));
+          doc.rect(x, y - piece.run.sizePt * 0.8, piece.width, piece.run.sizePt * 1.1, 'F');
+          doc.setTextColor(...rgb(piece.run.color));
+        }
+        doc.text(piece.text, x, y);
+        if (piece.run.underline) {
+          doc.setDrawColor(...rgb(piece.run.color));
+          doc.setLineWidth(0.5);
+          doc.line(x, y + 1.5, x + piece.width, y + 1.5);
+        }
+        x += piece.width;
+      }
+      y += lineHeight;
+    }
+    y += tallest * 0.4;
+  }
+
+  downloadBlob(doc.output('blob'), `${safeFileName(title)}.pdf`);
+}
+
+/** Base64 out of a data URL, as the bytes Word wants to embed. */
+function bytesOf(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+  const binary = atob(base64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i);
+  return out;
 }
 
 /**
- * Printing is the PDF export. A JS PDF library would have to re-implement text
- * layout, web fonts, colour and image embedding, and would still disagree with
- * what the user sees on screen. The browser's own print engine already renders
- * this exact HTML correctly, so handing it the content and letting the user
- * choose "Save as PDF" keeps full fidelity at no bundle cost.
- *
- * It goes through a hidden iframe rather than window.open because a popup
- * blocker will silently eat the new window and the export looks broken. Note
- * that this returns as soon as the dialog is asked for: the dialog is modal to
- * the browser, not to us, so the caller cannot know whether the user saved or
- * cancelled, and should not show a success message that claims a file exists.
+ * A genuine .docx: zipped OOXML, the format the extension claims. The earlier
+ * version wrote the HTML that Word has opened since Word 2000, which avoided a
+ * dependency but made some versions of Word warn that the file was not what it
+ * said it was. Worth the kilobytes not to hand someone a file their marker's
+ * Word complains about.
  */
-export function exportPdf(title: string, html: string, style?: Look): void {
-  const heading = escapeHtml(title.trim() || 'Document');
-  const { lineHeight, fontFamily } = look(style);
-  const page = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${heading}</title>
-  <style>
-    @page { size: A4; margin: 20mm; }
-    body {
-      font-family: ${fontFamily};
-      font-size: 12pt;
-      line-height: ${lineHeight};
-      color: #000;
-      margin: 0;
-    }
-    h1 { font-size: 20pt; margin: 0 0 16px; }
-    img { max-width: 100%; height: auto; }
-  </style>
-</head>
-<body>
-  <h1>${heading}</h1>
-  ${html}
-</body>
-</html>`;
+export async function exportDocx(title: string, editor: HTMLElement, look?: Look): Promise<void> {
+  const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel } = await import('docx');
+  const blocks = readDocument(editor);
+  const spacing = look?.lineHeight && look.lineHeight > 0 ? look.lineHeight : 1.5;
 
-  try {
-    const frame = document.createElement('iframe');
-    frame.setAttribute('aria-hidden', 'true');
-    frame.style.cssText = 'position:fixed; right:0; bottom:0; width:0; height:0; border:0';
-    frame.srcdoc = page;
+  const alignment = {
+    left: AlignmentType.LEFT,
+    center: AlignmentType.CENTER,
+    right: AlignmentType.RIGHT,
+  } as const;
 
-    frame.onload = () => {
-      // Web fonts and base64 images settle a frame or two after load, and
-      // printing before they do produces a blank or unstyled page.
-      window.setTimeout(() => {
-        try {
-          // Chrome and Safari both fire this once the dialog closes, saved or
-          // cancelled, which is the earliest it is safe to tidy up.
-          frame.contentWindow?.addEventListener('afterprint', () => frame.remove());
-          frame.contentWindow?.focus();
-          frame.contentWindow?.print();
-        } catch {
-          // Nothing useful to recover here, and an export must never break the editor.
-        }
-        // Backstop for anything that never fires afterprint. The dialog
-        // snapshots the document asynchronously, so this has to be generous.
-        window.setTimeout(() => frame.remove(), 60000);
-      }, 300);
-    };
+  const children = [
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: title.trim() || 'Document', bold: true, size: 40 })],
+    }),
+    ...blocks.map((block: Block) => {
+      if (block.kind === 'image') {
+        const scale = Math.min(1, 600 / block.width);
+        return new Paragraph({
+          children: [
+            new ImageRun({
+              type: block.src.includes('image/png') ? 'png' : 'jpg',
+              data: bytesOf(block.src),
+              transformation: { width: block.width * scale, height: block.height * scale },
+            }),
+          ],
+        });
+      }
+      return new Paragraph({
+        alignment: alignment[block.align],
+        // Word counts line spacing in twentieths of a point, where 240 is single.
+        spacing: { line: Math.round(240 * spacing), after: 120 },
+        children: block.runs.map((run) => new TextRun({
+          text: run.text,
+          bold: run.bold,
+          italics: run.italic,
+          underline: run.underline ? {} : undefined,
+          color: run.color.replace('#', ''),
+          shading: run.highlight ? { fill: run.highlight.replace('#', '') } : undefined,
+          size: Math.round(run.sizePt * 2),
+          font: wordFamily(run.family),
+        })),
+      });
+    }),
+  ];
 
-    document.body.appendChild(frame);
-  } catch {
-    // Same reasoning as above: a failed export is a non-event for the caller.
-  }
+  const doc = new Document({ sections: [{ children }] });
+  downloadBlob(await Packer.toBlob(doc), `${safeFileName(title)}.docx`);
 }

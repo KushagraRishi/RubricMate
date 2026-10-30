@@ -11,7 +11,7 @@ import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { SAMPLE_DRAFT } from '../lib/samples';
 import { readImageFile, isHeic, ImageProblem } from '../lib/readImage';
-import { exportPdf, exportWordDoc, exportPlainText } from '../lib/exportDoc';
+import { exportPdf, exportDocx, exportPlainText } from '../lib/exportDoc';
 
 interface Props {
   draft: string;
@@ -172,19 +172,21 @@ export function GoogleDocMock({ draft, onDraftChange }: Props) {
     sync();
   };
 
-  const html = () => editor.current?.innerHTML ?? '';
   const text = () => editor.current?.innerText ?? '';
 
   /**
-   * Line spacing sits on the container, not in the text, so it never appears in
-   * innerHTML and an export would quietly fall back to single and a half. The
-   * font is read off the page for the same reason: whatever the reader has been
-   * looking at is what should come out.
+   * Both rich exports read the editor element itself rather than a string of
+   * HTML, because the fonts, colours and sizes they need are only resolved on
+   * elements that are actually in the page. Line spacing is passed separately:
+   * it lives on the container, so it is nowhere in the content.
    */
-  const look = () => ({
-    lineHeight: spacing[0],
-    fontFamily: editor.current ? getComputedStyle(editor.current).fontFamily : undefined,
-  });
+  const save = (run: (el: HTMLElement, look: { lineHeight: number }) => Promise<void>) => {
+    const el = editor.current;
+    if (!el) return;
+    run(el, { lineHeight: spacing[0] }).catch(() => {
+      toast.error('Could not build that file. Try again.');
+    });
+  };
 
   const tool = 'p-1.5 hover:bg-gray-100 rounded text-[#5f6368]';
   const menu = 'flex items-center gap-1 text-xs px-2 py-1 hover:bg-gray-100 rounded text-[#5f6368]';
@@ -218,11 +220,11 @@ export function GoogleDocMock({ draft, onDraftChange }: Props) {
                   Export
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => exportPdf(title, html(), look())}>
+                  <DropdownMenuItem onClick={() => save((el, look) => exportPdf(title, el, look))}>
                     <FileDown className="w-4 h-4 mr-2" />
                     PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportWordDoc(title, html(), look())}>
+                  <DropdownMenuItem onClick={() => save((el, look) => exportDocx(title, el, look))}>
                     <FileType className="w-4 h-4 mr-2" />
                     Word
                   </DropdownMenuItem>

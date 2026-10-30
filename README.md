@@ -67,8 +67,9 @@ That is why the word counter moves while you type but the feedback does not.
 - Rubric files (PDF, `.docx`, `.txt`) are turned into text **in the browser**.
   The functions stay small and JSON-only, and a large PDF never crosses the wire.
   The parsers are loaded on demand, so they cost nothing unless you upload. The
-  same goes for the HEIC decoder behind inserting an iPhone photo, which is the
-  largest of them and the one most people never touch.
+  same goes for the HEIC decoder behind inserting an iPhone photo, and for the
+  PDF and Word writers behind Export. None of them is in the first load, and
+  most people never touch any of them.
 - No database, no accounts. A session lives in React state.
 - The demo runs on one personal API key in public, so input size, output size
   and requests per visitor are all capped.

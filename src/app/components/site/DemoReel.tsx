@@ -41,10 +41,10 @@ const DONE = 17800;
 const LOOP = 21600;
 
 const CAPTIONS: [number, string][] = [
-  [DROP, 'Drop in the rubric'],
+  [DROP, 'Add the rubric'],
   [READ, 'It reads the rubric'],
   [LIST, 'You get a checklist'],
-  [TYPE, 'Words and sources tick off as you type'],
+  [TYPE, 'Write your assignment. Words and sources tick off'],
   [CHECK, 'The AI reads the rest'],
   [SCORE, 'A score and a reason for each line'],
   [NEXT, 'And one thing to do next'],

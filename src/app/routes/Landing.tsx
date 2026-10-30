@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { BookCheck, ArrowRight, Github, Upload, PenLine, ListChecks } from 'lucide-react';
+import { BookCheck, Github, Upload, PenLine, ListChecks } from 'lucide-react';
 import { motion, useReducedMotion, useScroll } from 'motion/react';
 import { Button } from '../components/ui/button';
 import { SplitDiagram, ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
@@ -89,7 +89,7 @@ export function Landing() {
         </div>
       </nav>
 
-      <header className="px-8 pt-24 pb-16">
+      <header className="px-8 pt-20 pb-10">
         <motion.div
           className="max-w-[760px] mx-auto text-center"
           initial={still ? false : { opacity: 0, y: 14 }}
@@ -99,18 +99,10 @@ export function Landing() {
           <h1 className="text-[#202124] mb-4 text-4xl leading-tight">
             Know exactly what your assignment is missing
           </h1>
-          <p className="text-[#5f6368] mb-8 max-w-[560px] mx-auto">
+          <p className="text-[#5f6368] max-w-[560px] mx-auto">
             Upload your rubric and start writing. RubricMate shows what you have completed,
             what still needs work, and what to fix next.
           </p>
-          <div className="flex items-center justify-center">
-            <Link to="/demo">
-              <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full px-7 h-11">
-                Try the live demo
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
         </motion.div>
       </header>
 

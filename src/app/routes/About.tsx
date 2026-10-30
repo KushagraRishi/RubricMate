@@ -1,4 +1,5 @@
 import { SiteNav, SiteFooter, Section, PageHead } from '../components/site/Shell';
+import { RubricExample } from '../components/site/CaseStudy';
 import {
   NumberStrip, WhyTiles, DecisionCards, FlowGrid, ChallengeTiles, VerifyRow, NextChips,
 } from '../components/site/AboutVisuals';
@@ -16,27 +17,35 @@ export function About() {
         </div>
       </section>
 
-      <Section tint title="Why it is shaped this way">
+      <Section
+        tint
+        title="Two kinds of rules"
+        lede="RubricMate sorts every rule in your rubric. Some are counted. Some are read."
+      >
+        <RubricExample />
+      </Section>
+
+      <Section title="Why it is shaped this way">
         <WhyTiles />
       </Section>
 
-      <Section title="Three decisions">
+      <Section tint title="Three decisions">
         <DecisionCards />
       </Section>
 
-      <Section tint title="What happens when you press Check" lede="Eight steps, two trips to the server.">
+      <Section title="What happens when you press Check" lede="Eight steps, two trips to the server.">
         <FlowGrid />
       </Section>
 
-      <Section title="Four hard parts">
+      <Section tint title="Four hard parts">
         <ChallengeTiles />
       </Section>
 
-      <Section tint title="How it is verified">
+      <Section title="How it is verified">
         <VerifyRow />
       </Section>
 
-      <Section title="What I would build next">
+      <Section tint title="What I would build next">
         <NextChips />
       </Section>
 

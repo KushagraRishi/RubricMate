@@ -3,7 +3,7 @@ import { Upload, PenLine, ListChecks } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
 import { DemoReel } from '../components/site/DemoReel';
-import { RubricExample, SavingsCallout, StackChips, GoDeeper } from '../components/site/CaseStudy';
+import { ProblemSolution, SavingsCallout, StackChips, GoDeeper } from '../components/site/CaseStudy';
 import { SiteNav, SiteFooter, Section } from '../components/site/Shell';
 
 const STEPS = [
@@ -64,10 +64,10 @@ export function Landing() {
       <Section
         id="build"
         tint
-        title="Check simple things instantly"
-        lede="A rubric is the list of things your assignment is marked on. RubricMate sorts each one."
+        title="Stop finding out too late"
+        lede="A rubric is the list of things your assignment is marked on."
       >
-        <RubricExample />
+        <ProblemSolution />
       </Section>
 
       <Section title="How it fits together" lede="A React app, three functions, no database.">

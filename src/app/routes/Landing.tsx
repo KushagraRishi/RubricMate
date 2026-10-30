@@ -1,9 +1,12 @@
 import { Link } from 'react-router';
 import { BookCheck, ArrowRight, Github, Upload, PenLine, ListChecks } from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion, useScroll } from 'motion/react';
 import { Button } from '../components/ui/button';
 import { SplitDiagram, ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
 import { DemoReel } from '../components/site/DemoReel';
+
+/** Same curve as the diagrams, so the page moves as one thing. */
+const EASE = [0.23, 1, 0.32, 1] as const;
 
 const STEPS = [
   { icon: Upload, title: 'Drop in your rubric', body: 'A PDF, a Word file, or paste it.' },
@@ -18,26 +21,36 @@ const LIMITS = [
 ];
 
 function Section({
-  id, title, lede, children,
+  id, title, lede, tint, children,
 }: {
   id?: string;
   title: string;
   lede?: string;
+  tint?: boolean;
   children?: React.ReactNode;
 }) {
   const still = useReducedMotion();
+  // The heading leads and the lede follows a beat later, so the eye is given
+  // an order to read them in rather than a block that appears at once.
+  const rise = (delay: number) => ({
+    initial: still ? false : { opacity: 0, transform: 'translateY(12px)' },
+    whileInView: still ? undefined : { opacity: 1, transform: 'translateY(0px)' },
+    viewport: { once: true, margin: '-60px' },
+    transition: { duration: 0.45, delay, ease: EASE },
+  });
+
   return (
-    <section id={id} className="px-8 py-16 border-t border-gray-200">
+    <section
+      id={id}
+      className={`px-8 py-20 border-t border-gray-200 ${tint ? 'bg-[#fafbfc]' : ''}`}
+    >
       <div className="max-w-[720px] mx-auto">
-        <motion.div
-          initial={still ? false : { opacity: 0, y: 10 }}
-          whileInView={still ? undefined : { opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-        >
-          <h2 className="text-[#202124] mb-2">{title}</h2>
-          {lede && <p className="text-[#5f6368] mb-8 leading-relaxed">{lede}</p>}
-        </motion.div>
+        <motion.h2 className="text-[#202124] mb-2" {...rise(0)}>{title}</motion.h2>
+        {lede && (
+          <motion.p className="text-[#5f6368] mb-8 leading-relaxed" {...rise(0.08)}>
+            {lede}
+          </motion.p>
+        )}
         {children}
       </div>
     </section>
@@ -46,10 +59,18 @@ function Section({
 
 export function Landing() {
   const still = useReducedMotion();
+  const { scrollYProgress } = useScroll();
 
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b border-gray-200 px-8 py-4 sticky top-0 bg-white/90 backdrop-blur z-30">
+        {/* How far down the page you are. Bound straight to the scroll value,
+            so it tracks the thumb exactly rather than animating after it. */}
+        <motion.div
+          className="absolute left-0 bottom-0 h-0.5 w-full bg-[#4285F4] origin-left"
+          style={{ scaleX: scrollYProgress }}
+          aria-hidden="true"
+        />
         <div className="max-w-[1100px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#4285F4] rounded-lg flex items-center justify-center">
@@ -124,6 +145,7 @@ export function Landing() {
 
       <Section
         id="build"
+        tint
         title="Count what can be counted"
         lede="A word count is not a judgement call. Neither is “cite four sources”. Only the rest is worth a model."
       >
@@ -145,6 +167,7 @@ export function Landing() {
       </Section>
 
       <Section
+        tint
         title="Measured, not guessed"
         lede="The sample essay ends without a conclusion on purpose. Haiku called the structure done; Sonnet and Opus caught it. So Sonnet marks drafts, and Haiku does the two jobs where all three scored the same."
       >

@@ -8,7 +8,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
-import { FileText as FileCount } from 'lucide-react';
 import { toast } from 'sonner';
 import { SAMPLE_DRAFT } from '../lib/samples';
 import { readImageFile, isHeic, ImageProblem } from '../lib/readImage';
@@ -17,12 +16,6 @@ import { exportPdf, exportWordDoc, exportPlainText } from '../lib/exportDoc';
 interface Props {
   draft: string;
   onDraftChange: (text: string) => void;
-  /**
-   * Set only when the checklist is not already counting words. A rubric that
-   * asks for a word count gets one in the sidebar against its target, which is
-   * the more useful number; this is the fallback for rubrics that do not.
-   */
-  count: string | null;
 }
 
 /** Fonts people actually ask for by name, in the order they look for them. */
@@ -51,7 +44,7 @@ const HIGHLIGHTS = [
  * Every control left in the toolbar works; the ones that could only ever have
  * been decorative were removed rather than left there to be clicked.
  */
-export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
+export function GoogleDocMock({ draft, onDraftChange }: Props) {
   const editor = useRef<HTMLDivElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const savedRange = useRef<Range | null>(null);
@@ -182,6 +175,17 @@ export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
   const html = () => editor.current?.innerHTML ?? '';
   const text = () => editor.current?.innerText ?? '';
 
+  /**
+   * Line spacing sits on the container, not in the text, so it never appears in
+   * innerHTML and an export would quietly fall back to single and a half. The
+   * font is read off the page for the same reason: whatever the reader has been
+   * looking at is what should come out.
+   */
+  const look = () => ({
+    lineHeight: spacing[0],
+    fontFamily: editor.current ? getComputedStyle(editor.current).fontFamily : undefined,
+  });
+
   const tool = 'p-1.5 hover:bg-gray-100 rounded text-[#5f6368]';
   const menu = 'flex items-center gap-1 text-xs px-2 py-1 hover:bg-gray-100 rounded text-[#5f6368]';
 
@@ -198,13 +202,6 @@ export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
             />
 
             <div className="flex items-center gap-2 ml-auto">
-              {count && (
-                <span className="flex items-center gap-1.5 text-xs text-[#5f6368] mr-1">
-                  <FileCount className="w-3.5 h-3.5 text-[#34A853]" />
-                  {count}
-                </span>
-              )}
-
               <Button
                 onClick={() => onDraftChange(SAMPLE_DRAFT)}
                 size="sm"
@@ -221,11 +218,11 @@ export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
                   Export
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => exportPdf(title, html())}>
+                  <DropdownMenuItem onClick={() => exportPdf(title, html(), look())}>
                     <FileDown className="w-4 h-4 mr-2" />
                     PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportWordDoc(title, html())}>
+                  <DropdownMenuItem onClick={() => exportWordDoc(title, html(), look())}>
                     <FileType className="w-4 h-4 mr-2" />
                     Word
                   </DropdownMenuItem>
@@ -379,6 +376,9 @@ export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
         <div
           ref={editor}
           contentEditable
+          role="textbox"
+          aria-multiline="true"
+          aria-label="Your assignment"
           suppressContentEditableWarning
           onInput={sync}
           onPaste={paste}

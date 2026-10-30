@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   BookCheck, Check, Clock, X, FileText, FileDown, Loader2, Pause, Play,
@@ -87,6 +87,28 @@ interface View {
 export function DemoReel() {
   const still = useReducedMotion();
   const frame = useRef<HTMLDivElement>(null);
+  const outer = useRef<HTMLDivElement>(null);
+
+  // The reel and its caption should land on the first screen with the head
+  // above them. When the window is shorter than that, the whole reel scales
+  // down as one picture rather than being cut at the fold. zoom, not a
+  // transform, so the space it takes shrinks with it.
+  useLayoutEffect(() => {
+    const el = outer.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.zoom = '1';
+      const natural = el.offsetHeight;
+      if (!natural) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const room = window.innerHeight - top - 12;
+      el.style.zoom = String(Math.max(0.68, Math.min(1, room / natural)));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    document.fonts?.ready.then(fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
   const [playing, setPlaying] = useState(true);
   const [seen, setSeen] = useState(true);
   // Reduced motion gets the last frame of the story and no clock at all.
@@ -176,7 +198,7 @@ export function DemoReel() {
   const caption = CAPTIONS.filter(([ms]) => t >= ms).pop()?.[1] ?? CAPTIONS[0][1];
 
   return (
-    <div className="reel reel-frame">
+    <div ref={outer} className="reel reel-frame">
       <div className="crop">
       <div ref={frame} className="reel-sheet" data-kind="product">
         <div className="flex h-[500px] relative">

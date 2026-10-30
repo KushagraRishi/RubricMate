@@ -10,7 +10,7 @@ import { Hash, Brain, X, Check } from 'lucide-react';
 /* ------------------------------------------------- the problem and the fix */
 
 const PAIRS = [
-  ['Read the rubric once', 'Your rubric becomes a checklist'],
+  ['Struggling to find what is done and what is not', 'Your rubric becomes a checklist'],
   ['Forget parts while you write', 'It updates as you write'],
   ['Find the gaps after you finish', 'Gaps show while you can still fix them'],
 ];

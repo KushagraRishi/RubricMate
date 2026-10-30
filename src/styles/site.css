@@ -87,7 +87,8 @@
 
 /* ---------------------------------------------------------------- the hero */
 
-.site .hero { padding-block: var(--space-2xl) var(--space-xl); }
+.site .hero { padding-block: var(--space-xl) var(--space-lg); }
+.site .hero h1 { font-size: var(--text-display-s); max-width: 24ch; }
 .site .hero__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--space-xl) var(--gap-columns); align-items: end; }
 .site .hero__head { grid-column: 1 / span 8; }
 .site .hero__side { grid-column: 9 / span 4; display: grid; gap: var(--space-lg); justify-items: start; padding-bottom: var(--space-xs); }
@@ -102,7 +103,7 @@
 .site .reel-wrap { padding-bottom: var(--space-3xl); }
 .site .reel-frame { max-width: 980px; margin-inline: auto; }
 .site .reel-sheet { position: relative; overflow: hidden; border-radius: var(--radius-card); background: var(--reel-surface); box-shadow: var(--shadow-sheet); outline: 1px solid color-mix(in oklab, var(--color-ink) 14%, transparent); outline-offset: -1px; }
-.site .reel-foot { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-lg); }
+.site .reel-foot { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-md); }
 .site .reel-foot p { font-size: var(--text-sm); color: var(--color-muted); }
 .site .reel-foot strong { font-weight: 500; color: var(--color-ink); }
 .site .reel-toggle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border: var(--rule-hair) solid var(--color-rule); border-radius: 2px; background: transparent; color: var(--color-ink-2); cursor: pointer; transition: background-color var(--dur-short) var(--ease-out); }
@@ -280,3 +281,42 @@
 .site .steps li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: var(--space-md); padding-block: var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); }
 .site .steps svg { width: 20px; height: 20px; color: var(--color-ink-2); margin-top: var(--space-3xs); }
 .site .steps p + p { font-size: var(--text-sm); color: var(--color-muted); }
+
+/* ------------------------------------------------------ scroll animation */
+
+/* Each block rises in as it scrolls into view, tied to the scroll itself so it
+   moves with the reader and never runs on its own. Browsers without scroll
+   timelines, and anyone who asked for less motion, get the page still and
+   whole: nothing here hides content by default. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .site .section .headblock,
+    .site .ba__table tbody tr,
+    .site .statement,
+    .site .figure-sheet,
+    .site .cost__figure,
+    .site .cost__chart,
+    .site .index > li,
+    .site .rules-index li,
+    .site .plain li,
+    .site .figures > div,
+    .site .why > div,
+    .site .decision,
+    .site .flow li,
+    .site .hard > div,
+    .site .verify > div,
+    .site .next li {
+      animation: scroll-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+    /* The orange rule under the big figure draws itself, like a guide. */
+    .site .bigfig-rule {
+      animation: scroll-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 45%;
+    }
+  }
+}
+@keyframes scroll-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes scroll-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }

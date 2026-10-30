@@ -15,9 +15,9 @@ const STEPS = [
 ];
 
 const LIMITS = [
-  ['It will not write your essay.', 'Ask, and it explains the shape of a paragraph instead.'],
-  ['Nothing is saved.', 'Close the tab and the session is gone.'],
-  ['The citation counter is a regex.', 'Good enough for live progress, not for marking.'],
+  ['It does not write your essay for you.', 'It helps you understand what needs improvement.'],
+  ['Your work is not permanently saved.', 'Close the tab and your session is gone.'],
+  ['Source counting is an estimate.', 'Use it as a helpful progress check, not as your final citation checker.'],
 ];
 
 function Section({
@@ -146,39 +146,36 @@ export function Landing() {
       <Section
         id="build"
         tint
-        title="Count what can be counted"
-        lede="A word count is not a judgement call. Neither is “cite four sources”. Only the rest is worth a model."
+        title="Check simple things instantly"
+        lede="Some rubric requirements do not need AI. Word count, number of sources, and other simple checks can be done directly in your browser."
       >
         <SplitDiagram />
         <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
-          The first version sent the draft to the model to learn its own word count. That was a
-          two second wait for a number the browser already had. Splitting it made the page feel
-          immediate and cut the bill at the same time.
+          This makes RubricMate faster and reduces unnecessary AI costs.
         </p>
       </Section>
 
-      <Section title="How it is built" lede="A React app, three serverless functions, and no database.">
+      <Section title="How RubricMate works" lede="RubricMate keeps the process simple.">
         <ArchitectureDiagram />
         <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
-          Files become text in the browser, so a large PDF never crosses the wire. Both scoring calls
-          use a Zod schema as structured output, so a malformed reply is impossible rather than
-          unlikely. The same schema also types the code that renders it.
+          Your document is converted to text in your browser, so large files do not need to be
+          uploaded to our server.
         </p>
       </Section>
 
       <Section
         tint
-        title="Measured, not guessed"
-        lede="The sample essay ends without a conclusion on purpose. Haiku called the structure done; Sonnet and Opus caught it. So Sonnet marks drafts, and Haiku does the two jobs where all three scored the same."
+        title="Tested, not guessed"
+        lede="We tested different AI models to see which ones were best for each task. Some smaller models missed important details, such as a missing conclusion. Stronger models caught them. So RubricMate uses the right model for each job instead of using the most expensive model for everything."
       >
         <CostChart />
         <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
-          It is being tested with professors as well, so the marking lines up with how
-          someone who sets a rubric actually reads against it.
+          We are also testing RubricMate with professors to make sure the feedback matches how
+          real assignments are graded.
         </p>
       </Section>
 
-      <Section title="What it does not do">
+      <Section title="What RubricMate does not do">
         <div className="space-y-3">
           {LIMITS.map(([head, tail], i) => (
             <motion.div

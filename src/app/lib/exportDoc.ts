@@ -20,6 +20,43 @@ function safeFileName(title: string): string {
   return cleaned.slice(0, 80).trim() || 'document';
 }
 
+/**
+ * What the document looks like on screen, so the exports can match it. Line
+ * spacing in particular is set on the editor's container rather than inside
+ * the text, so it is invisible to innerHTML and has to be carried across by
+ * hand. Getting that wrong matters more than it sounds: "double spaced" is one
+ * of the commonest things a rubric asks for.
+ */
+export interface Look {
+  lineHeight?: number;
+  fontFamily?: string;
+}
+
+const DEFAULT_LOOK = {
+  lineHeight: 1.5,
+  fontFamily: "Georgia, 'Times New Roman', serif",
+};
+
+/** A font stack read off the page is trusted input, but it still ends up inside
+ * a <style> block, so anything that could close that block early is dropped. */
+function cssSafe(value: string): string {
+  return value.replace(/[<>{};]/g, '').slice(0, 200);
+}
+
+function look(given: Look | undefined) {
+  const lineHeight = given?.lineHeight;
+  return {
+    lineHeight: typeof lineHeight === 'number' && lineHeight > 0 ? lineHeight : DEFAULT_LOOK.lineHeight,
+    // A stack read off the page starts with names only a browser knows, such
+    // as ui-sans-serif. The PDF renders in that same browser so it matches
+    // exactly, but Word would find nothing it recognises and fall back to
+    // whatever it likes, so a real name is appended for it to land on.
+    fontFamily: given?.fontFamily
+      ? `${cssSafe(given.fontFamily)}, Calibri, Arial, sans-serif`
+      : DEFAULT_LOOK.fontFamily,
+  };
+}
+
 /** Titles go into generated markup, so they have to be escaped on the way in. */
 function escapeHtml(value: string): string {
   return value
@@ -62,8 +99,9 @@ export function exportPlainText(title: string, text: string): void {
  * faithful one. The cost is the .doc extension and a format warning on opening
  * in some versions of Word, which is a fair trade for zero dependencies.
  */
-export function exportWordDoc(title: string, html: string): void {
+export function exportWordDoc(title: string, html: string, style?: Look): void {
   const heading = escapeHtml(title.trim() || 'Document');
+  const { lineHeight, fontFamily } = look(style);
   const markup = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -85,9 +123,9 @@ export function exportWordDoc(title: string, html: string): void {
     }
     div.WordSection1 { page: WordSection1; }
     body {
-      font-family: Georgia, 'Times New Roman', serif;
+      font-family: ${fontFamily};
       font-size: 12pt;
-      line-height: 1.5;
+      line-height: ${lineHeight};
       color: #000;
     }
     h1 { font-size: 20pt; margin: 0 0 16pt; }
@@ -120,8 +158,9 @@ export function exportWordDoc(title: string, html: string): void {
  * the browser, not to us, so the caller cannot know whether the user saved or
  * cancelled, and should not show a success message that claims a file exists.
  */
-export function exportPdf(title: string, html: string): void {
+export function exportPdf(title: string, html: string, style?: Look): void {
   const heading = escapeHtml(title.trim() || 'Document');
+  const { lineHeight, fontFamily } = look(style);
   const page = `<!DOCTYPE html>
 <html>
 <head>
@@ -130,9 +169,9 @@ export function exportPdf(title: string, html: string): void {
   <style>
     @page { size: A4; margin: 20mm; }
     body {
-      font-family: Georgia, 'Times New Roman', 'Helvetica Neue', Arial, sans-serif;
+      font-family: ${fontFamily};
       font-size: 12pt;
-      line-height: 1.5;
+      line-height: ${lineHeight};
       color: #000;
       margin: 0;
     }
@@ -157,13 +196,16 @@ export function exportPdf(title: string, html: string): void {
       // printing before they do produces a blank or unstyled page.
       window.setTimeout(() => {
         try {
+          // Chrome and Safari both fire this once the dialog closes, saved or
+          // cancelled, which is the earliest it is safe to tidy up.
+          frame.contentWindow?.addEventListener('afterprint', () => frame.remove());
           frame.contentWindow?.focus();
           frame.contentWindow?.print();
         } catch {
           // Nothing useful to recover here, and an export must never break the editor.
         }
-        // The dialog snapshots the document asynchronously, so the iframe has
-        // to outlive the print() call by a good margin.
+        // Backstop for anything that never fires afterprint. The dialog
+        // snapshots the document asynchronously, so this has to be generous.
         window.setTimeout(() => frame.remove(), 60000);
       }, 300);
     };

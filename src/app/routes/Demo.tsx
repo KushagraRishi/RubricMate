@@ -47,16 +47,6 @@ export function Demo() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // The sidebar counts words only when a criterion asks for a number. With a
-  // rubric that never mentions length, nothing on the screen would count at
-  // all, so the toolbar keeps a quiet one for that case.
-  const rubricCountsWords = rm.criteria.some(
-    (c) => c.measurable && c.measurable.kind !== 'min_citations',
-  );
-  const count = rubricCountsWords
-    ? null
-    : `${rm.words.toLocaleString()} ${rm.words === 1 ? 'word' : 'words'}`;
-
   if (narrow) return <TooNarrow />;
 
   return (
@@ -75,7 +65,7 @@ export function Demo() {
       </header>
 
       <div className="flex-1 max-w-[1440px] w-full mx-auto flex relative min-h-0">
-        <GoogleDocMock draft={rm.draft} onDraftChange={rm.setDraft} count={count} />
+        <GoogleDocMock draft={rm.draft} onDraftChange={rm.setDraft} />
 
         <RubricMateSidebar
           step={rm.step}

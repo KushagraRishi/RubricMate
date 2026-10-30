@@ -139,7 +139,7 @@ export function GoDeeper({ link }: { link: React.ComponentType<any> }) {
 const SAMPLE_RULES = [
   { rule: 'Write at least 1,000 words', by: 'browser' },
   { rule: 'Use at least 4 sources', by: 'browser' },
-  { rule: 'Have a clear thesis', by: 'ai' },
+  { rule: 'State a clear aim', by: 'ai' },
   { rule: 'End with a conclusion', by: 'ai' },
 ] as const;
 
@@ -177,7 +177,7 @@ export function RubricExample() {
         })}
       </Group>
       <p className="text-xs mt-4" style={{ color: MUTED }}>
-        Counting is instant and free. Reading takes a few seconds and costs under 1¢.
+        Counts update as you type. The AI check takes a few seconds.
       </p>
     </div>
   );

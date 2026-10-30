@@ -109,7 +109,7 @@ export function DecisionCards() {
           <div className="rounded-xl border border-purple-100 bg-white p-3">
             <p className="text-[11px] mb-2" style={{ color: PURPLE }}>Read by AI</p>
             <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs" style={{ color: INK }}><PenLine className="w-3 h-3" style={{ color: MUTED }} />Is the thesis arguable?</div>
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: INK }}><PenLine className="w-3 h-3" style={{ color: MUTED }} />Is the aim clear?</div>
               <div className="flex items-center gap-1.5 text-xs" style={{ color: INK }}><PenLine className="w-3 h-3" style={{ color: MUTED }} />Is there a conclusion?</div>
             </div>
             <div className="mt-3"><Tag color={MUTED} bg="#f1f3f4">a few seconds</Tag></div>
@@ -267,7 +267,7 @@ export function VerifyRow() {
 
 const NEXT = [
   'Automated tests', 'Streaming checks', 'Saved drafts', 'Professor templates',
-  'Real citation parser', 'Scored essay set',
+  'Real citation parser', 'Scored example set',
 ];
 
 export function NextChips() {

@@ -20,7 +20,7 @@ export function About() {
       <Section
         tint
         title="Two kinds of rules"
-        lede="RubricMate sorts every rule in your rubric. Some are counted. Some are read."
+        lede="Works on any rubric: essays, journals, reports. Some rules are counted. Some are read."
       >
         <RubricExample />
       </Section>

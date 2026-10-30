@@ -70,7 +70,7 @@ export function Landing() {
         <ProblemSolution />
       </Section>
 
-      <Section title="How it fits together" lede="A React app, three functions, no database.">
+      <Section title="What happens behind the screen" lede="Your browser does the counting. A small server asks the AI.">
         <ArchitectureDiagram />
       </Section>
 

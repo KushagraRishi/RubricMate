@@ -63,7 +63,7 @@ export function Landing() {
 
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b border-gray-200 px-8 py-4 sticky top-0 bg-white/90 backdrop-blur z-30">
+      <nav className="border-b border-gray-200 px-8 py-3 sticky top-0 bg-white/90 backdrop-blur z-30">
         {/* How far down the page you are. Bound straight to the scroll value,
             so it tracks the thumb exactly rather than animating after it. */}
         <motion.div
@@ -89,7 +89,7 @@ export function Landing() {
         </div>
       </nav>
 
-      <header className="px-8 pt-20 pb-10">
+      <header className="px-8 pt-6 pb-6">
         <motion.div
           className="max-w-[760px] mx-auto text-center"
           initial={still ? false : { opacity: 0, y: 14 }}
@@ -109,7 +109,7 @@ export function Landing() {
       {/* The reel is a document beside a sidebar, the same as the demo, so it
           needs the same width. A phone gets the three steps in words. */}
       <motion.div
-        className="pb-16 hidden md:block"
+        className="pb-8 hidden md:block"
         initial={still ? false : { opacity: 0, y: 16 }}
         animate={still ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
@@ -117,7 +117,7 @@ export function Landing() {
         <DemoReel />
       </motion.div>
 
-      <div className="md:hidden px-8 pb-16 space-y-3 max-w-[420px] mx-auto">
+      <div className="md:hidden px-8 pb-12 space-y-3 max-w-[420px] mx-auto">
         {STEPS.map(({ icon: Icon, title, body }) => (
           <div key={title} className="flex gap-3 items-start">
             <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">

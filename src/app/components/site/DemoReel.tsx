@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   BookCheck, Check, Clock, X, FileText, FileDown, Loader2, Pause, Play,
-  RefreshCw, Brain, ArrowRight,
+  RefreshCw, Brain,
 } from 'lucide-react';
-import { Button } from '../ui/button';
 import { SAMPLE_DRAFT } from '../../lib/samples';
 
 /**
@@ -392,8 +390,7 @@ export function DemoReel() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 mt-4 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mt-2">
           {!still && (
             <button
               onClick={() => setPlaying((p) => !p)}
@@ -405,18 +402,10 @@ export function DemoReel() {
                 : <Play className="w-3.5 h-3.5 ml-0.5" style={{ color: MUTED }} />}
             </button>
           )}
-          <p className="text-sm" style={{ color: MUTED }}>
-            <span style={{ color: INK }}>{caption}</span>
-            {'. '}Real output, no sign-up.
-          </p>
-        </div>
-
-        <Link to="/demo">
-          <Button variant="outline" className="rounded-full border-gray-300 h-9">
-            Try it yourself
-            <ArrowRight className="w-3.5 h-3.5 ml-2" />
-          </Button>
-        </Link>
+        <p className="text-sm" style={{ color: MUTED }}>
+          <span style={{ color: INK }}>{caption}</span>
+          {'. '}Real output, no sign-up.
+        </p>
       </div>
     </div>
   );

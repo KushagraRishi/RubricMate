@@ -4,6 +4,10 @@ import { motion, useReducedMotion, useScroll } from 'motion/react';
 import { Button } from '../components/ui/button';
 import { SplitDiagram, ArchitectureDiagram, CostChart } from '../components/site/Diagrams';
 import { DemoReel } from '../components/site/DemoReel';
+import {
+  OverviewCards, TechStack, WhyThisArchitecture, Decisions, RequestFlow,
+  Challenges, Verification, Privacy, WhatIsNext,
+} from '../components/site/CaseStudy';
 
 /** Same curve as the diagrams, so the page moves as one thing. */
 const EASE = [0.23, 1, 0.32, 1] as const;
@@ -19,6 +23,8 @@ const LIMITS = [
   ['Your work is not permanently saved.', 'Close the tab and your session is gone.'],
   ['Source counting is an estimate.', 'Use it as a helpful progress check, not as your final citation checker.'],
 ];
+
+const GITHUB = 'https://github.com/KushagraRishi/RubricMate';
 
 function Section({
   id, title, lede, tint, children,
@@ -42,7 +48,7 @@ function Section({
   return (
     <section
       id={id}
-      className={`px-8 py-20 border-t border-gray-200 ${tint ? 'bg-[#fafbfc]' : ''}`}
+      className={`px-8 py-16 border-t border-gray-200 ${tint ? 'bg-[#fafbfc]' : ''}`}
     >
       <div className="max-w-[720px] mx-auto">
         <motion.h2 className="text-[#202124] mb-2" {...rise(0)}>{title}</motion.h2>
@@ -78,11 +84,20 @@ export function Landing() {
             </div>
             <span className="text-[#202124]">RubricMate</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <a href="#build" className="hidden sm:inline-block text-sm text-[#5f6368] hover:text-[#4285F4] transition-colors px-3 py-2">
               How it works
             </a>
-            <Link to="/demo">
+            <a
+              href={GITHUB}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm text-[#5f6368] hover:text-[#4285F4] transition-colors px-3 py-2"
+            >
+              <Github className="w-4 h-4" />
+              Source
+            </a>
+            <Link to="/demo" className="ml-2">
               <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full px-5">Try it</Button>
             </Link>
           </div>
@@ -102,6 +117,10 @@ export function Landing() {
           <p className="text-[#5f6368] max-w-[560px] mx-auto">
             Upload your rubric and start writing. RubricMate shows what you have completed,
             what still needs work, and what to fix next.
+          </p>
+          {/* The one line that tells a technical reader what they are looking at. */}
+          <p className="text-xs text-[#5f6368] mt-4">
+            React · TypeScript · Tailwind · Claude API · Vercel functions · parsing in the browser
           </p>
         </motion.div>
       </header>
@@ -134,6 +153,13 @@ export function Landing() {
       <Section
         id="build"
         tint
+        title="The problem"
+        lede="Students read a rubric once, then forget half of it while writing. Most people open it again only after the assignment is finished, which is too late to act on it. RubricMate turns the rubric into a checklist that updates while you write."
+      >
+        <OverviewCards />
+      </Section>
+
+      <Section
         title="Check simple things instantly"
         lede="Some rubric requirements do not need AI. Word count, number of sources, and other simple checks can be done directly in your browser."
       >
@@ -143,28 +169,79 @@ export function Landing() {
         </p>
       </Section>
 
-      <Section title="How RubricMate works" lede="RubricMate keeps the process simple.">
+      <Section
+        tint
+        title="System architecture"
+        lede="A React app, three serverless functions, and no database."
+      >
         <ArchitectureDiagram />
-        <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
-          Your document is converted to text in your browser, so large files do not need to be
-          uploaded to our server.
-        </p>
+        <p className="text-[#202124] text-sm mt-8 mb-3">Why this way</p>
+        <WhyThisArchitecture />
+      </Section>
+
+      <Section
+        title="Tech stack"
+        lede="Chosen for what each part has to do, not for the shortest list."
+      >
+        <TechStack />
       </Section>
 
       <Section
         tint
-        title="Tested, not guessed"
-        lede="We tested different AI models to see which ones were best for each task. Some smaller models missed important details, such as a missing conclusion. Stronger models caught them. So RubricMate uses the right model for each job instead of using the most expensive model for everything."
+        title="Engineering decisions"
+        lede="The three calls that shaped everything else."
+      >
+        <Decisions />
+      </Section>
+
+      <Section
+        title="What happens when you press Check"
+        lede="Eight steps, and only two of them leave your machine."
+      >
+        <RequestFlow />
+      </Section>
+
+      <Section
+        tint
+        title="Performance and cost"
+        lede="The first version sent almost everything to the model. After measuring where the money and the seconds went, the countable work moved into the browser and each route got the model it actually needs."
       >
         <CostChart />
-        <p className="text-sm text-[#5f6368] mt-6 leading-relaxed">
+        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+          <p className="text-sm text-[#202124]">
+            About 80 percent cheaper per session, and the model that does the marking never changed.
+          </p>
+        </div>
+        <p className="text-sm text-[#5f6368] mt-4 leading-relaxed">
           We are also testing RubricMate with professors to make sure the feedback matches how
           real assignments are graded.
         </p>
       </Section>
 
-      <Section title="What RubricMate does not do">
-        <div className="space-y-3">
+      <Section
+        title="Engineering challenges"
+        lede="The four that took the longest to get right."
+      >
+        <Challenges />
+      </Section>
+
+      <Section
+        tint
+        title="How it is verified"
+        lede="There is no automated test suite yet. This is what stands in for one, and replacing it is the first item on the list below."
+      >
+        <Verification />
+      </Section>
+
+      <Section
+        title="Privacy"
+        lede="Nothing here needs an account, and nothing is kept."
+      >
+        <Privacy />
+      </Section>
+
+      <Section tint title="Limits, and what is next">
+        <div className="space-y-3 mb-8">
           {LIMITS.map(([head, tail], i) => (
             <motion.div
               key={head}
@@ -181,17 +258,22 @@ export function Landing() {
             </motion.div>
           ))}
         </div>
+        <p className="text-[#202124] text-sm mb-3">What I would build next</p>
+        <WhatIsNext />
       </Section>
 
       <footer className="px-8 py-12 border-t border-gray-200 bg-[#F1F3F4]">
         <div className="max-w-[720px] mx-auto flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm text-[#202124]">RubricMate</p>
-            <p className="text-xs text-[#5f6368]">Built by Kushagra Chaudhary</p>
+            <p className="text-xs text-[#5f6368] mb-2">Built by Kushagra Chaudhary</p>
+            <p className="text-xs text-[#5f6368]">
+              React · TypeScript · Vite · Tailwind · Claude API · Vercel
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/KushagraRishi/RubricMate"
+              href={GITHUB}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-sm text-[#5f6368] hover:text-[#4285F4] transition-colors"

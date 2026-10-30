@@ -1,5 +1,5 @@
 import { motion, useReducedMotion, type Variants } from 'motion/react';
-import { Hash, Brain } from 'lucide-react';
+import { Hash, Brain, X, Check } from 'lucide-react';
 
 /**
  * The case study half of the landing page.
@@ -178,6 +178,63 @@ export function RubricExample() {
       </Group>
       <p className="text-xs mt-4" style={{ color: MUTED }}>
         Counting is instant and free. Reading takes a few seconds and costs under 1¢.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------- the problem and the fix */
+
+const WITHOUT = [
+  'Read the rubric once',
+  'Forget parts while you write',
+  'Find the gaps after you finish',
+];
+
+const WITH = [
+  'Your rubric becomes a checklist',
+  'It updates as you write',
+  'Gaps show while you can still fix them',
+];
+
+/**
+ * Why anyone should care, before how it works. The old order explained the
+ * mechanism first, which only makes sense to someone already convinced.
+ */
+export function ProblemSolution() {
+  return (
+    <div>
+      <Group className="grid sm:grid-cols-2 gap-3">
+        <motion.div variants={item} className="rounded-2xl border border-gray-200 bg-white p-5">
+          <p className="text-xs mb-4" style={{ color: MUTED }}>Without it</p>
+          <div className="space-y-3">
+            {WITHOUT.map((line) => (
+              <div key={line} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: '#ea43351a' }}>
+                  <X className="w-3.5 h-3.5" style={{ color: '#d93025' }} />
+                </span>
+                <p className="text-sm" style={{ color: INK }}>{line}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div variants={item} className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+          <p className="text-xs mb-4" style={{ color: BLUE }}>With RubricMate</p>
+          <div className="space-y-3">
+            {WITH.map((line) => (
+              <div key={line} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: '#34A8531f' }}>
+                  <Check className="w-3.5 h-3.5" style={{ color: '#1e8e3e' }} />
+                </span>
+                <p className="text-sm" style={{ color: INK }}>{line}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </Group>
+      <p className="text-sm mt-5" style={{ color: INK }}>
+        So you fix it before you submit, not after you get the mark.
       </p>
     </div>
   );

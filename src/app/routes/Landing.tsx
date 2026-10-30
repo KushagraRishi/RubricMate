@@ -103,18 +103,13 @@ export function Landing() {
             Upload your rubric and start writing. RubricMate shows what you have completed,
             what still needs work, and what to fix next.
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center">
             <Link to="/demo">
               <Button className="bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-full px-7 h-11">
                 Try the live demo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <a href="#build">
-              <Button variant="outline" className="rounded-full px-7 h-11 border-gray-300">
-                See how it works
-              </Button>
-            </a>
           </div>
         </motion.div>
       </header>

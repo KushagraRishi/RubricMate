@@ -80,68 +80,6 @@ function Box({
   return <rect x={x} y={y} width={w} height={h} rx={12} fill={fill} stroke={stroke} strokeWidth={1.5} />;
 }
 
-/** The one idea worth a picture: what gets counted and what gets read. */
-export function SplitDiagram() {
-  return (
-    <Stage viewBox="0 0 640 330" label="Simple checks like word count run in your browser. Only the checks that need reading go to the AI.">
-      <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
-                markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill={LINE} />
-        </marker>
-      </defs>
-
-      <motion.g variants={part} style={svgBox}>
-        <Box x={200} y={8} w={240} h={46} fill={SURFACE} stroke={LINE} />
-        <text x={320} y={37} textAnchor="middle" fontSize={17} fill={INK}>Your rubric, as a checklist</text>
-      </motion.g>
-
-      <motion.g variants={line}>
-        <motion.path d="M 320 54 L 320 76" stroke={LINE} strokeWidth={1.5} fill="none" variants={line} />
-        <motion.path d="M 320 76 L 160 76 L 160 100" stroke={LINE} strokeWidth={1.5} fill="none"
-                     markerEnd="url(#arrow)" variants={line} />
-        <motion.path d="M 320 76 L 480 76 L 480 100" stroke={LINE} strokeWidth={1.5} fill="none"
-                     markerEnd="url(#arrow)" variants={line} />
-      </motion.g>
-
-      <motion.g variants={part} style={svgBox}>
-        <Box x={30} y={102} w={260} h={92} fill="#e8f0fe" stroke="#c6dafc" />
-        <text x={160} y={128} textAnchor="middle" fontSize={17} fill={BLUE}>Simple checks</text>
-        <text x={160} y={153} textAnchor="middle" fontSize={15} fill={MUTED}>“At least 1,000 words”</text>
-        <text x={160} y={175} textAnchor="middle" fontSize={15} fill={MUTED}>“Use at least 4 sources”</text>
-      </motion.g>
-
-      <motion.g variants={part} style={svgBox}>
-        <Box x={350} y={102} w={260} h={92} fill="#f3e8fd" stroke="#e0ccf5" />
-        <text x={480} y={128} textAnchor="middle" fontSize={17} fill="#8430ce">AI checks</text>
-        <text x={480} y={153} textAnchor="middle" fontSize={15} fill={MUTED}>“Is the thesis clear?”</text>
-        <text x={480} y={175} textAnchor="middle" fontSize={14} fill={MUTED}>“Does the essay have a conclusion?”</text>
-      </motion.g>
-
-      <motion.g variants={line}>
-        <motion.path d="M 160 194 L 160 228" stroke={LINE} strokeWidth={1.5} fill="none"
-                     markerEnd="url(#arrow)" variants={line} />
-        <motion.path d="M 480 194 L 480 228" stroke={LINE} strokeWidth={1.5} fill="none"
-                     markerEnd="url(#arrow)" variants={line} />
-      </motion.g>
-
-      <motion.g variants={part} style={svgBox}>
-        <Box x={30} y={230} w={260} h={82} fill="#ffffff" stroke={LINE} />
-        <text x={160} y={256} textAnchor="middle" fontSize={16} fill={INK}>Checked instantly</text>
-        <text x={160} y={279} textAnchor="middle" fontSize={14} fill={MUTED}>in your browser</text>
-        <text x={160} y={300} textAnchor="middle" fontSize={14} fill={GREEN}>Fast · Free · Accurate</text>
-      </motion.g>
-
-      <motion.g variants={part} style={svgBox}>
-        <Box x={350} y={230} w={260} h={82} fill="#ffffff" stroke={LINE} />
-        <text x={480} y={256} textAnchor="middle" fontSize={16} fill={INK}>Checked by AI</text>
-        <text x={480} y={279} textAnchor="middle" fontSize={14} fill={MUTED}>only when needed</text>
-        <text x={480} y={300} textAnchor="middle" fontSize={14} fill={MUTED}>a few seconds · 0.8¢</text>
-      </motion.g>
-    </Stage>
-  );
-}
-
 /** Where the work happens, and where the key is not. */
 export function ArchitectureDiagram() {
   const routes = [

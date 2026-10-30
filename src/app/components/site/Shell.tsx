@@ -1,4 +1,5 @@
-import { Link } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router';
 import '../../../styles/site.css';
 
 /**
@@ -31,9 +32,69 @@ export function Wordmark({ size }: { size?: 'large' }) {
   );
 }
 
+/** What rises in as it scrolls into view. The hero is never in this list. */
+const REVEAL = [
+  '.section .headblock', '.ba__table tbody tr', '.statement', '.figure-sheet',
+  '.cost__figure', '.cost__chart', '.bigfig-rule', '.cost__note', '.index > li',
+  '.rules-index li', '.plain li', '.figures > div', '.why > div', '.decision',
+  '.flow li', '.hard > div', '.verify > div', '.honest', '.next li',
+].join(', ');
+
+/**
+ * Plays each block's rise-in the first time it nears the screen. The
+ * animation starts just below the fold, so the block is already moving when
+ * it comes into view; siblings in one group follow each other by 90ms so a
+ * list builds rather than appearing at once. Nothing is hidden in CSS, so with
+ * scripting off the page is whole. With reduced motion asked for, it only
+ * fades.
+ */
+function useReveal(root: React.RefObject<HTMLDivElement | null>) {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const page = root.current;
+    if (!page || !('IntersectionObserver' in window) || !page.animate) return;
+    const gentle = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const items = Array.from(page.querySelectorAll<HTMLElement>(REVEAL));
+
+    const play = (el: HTMLElement) => {
+      const siblings = el.parentElement ? Array.from(el.parentElement.children) : [el];
+      const delay = gentle ? 0 : Math.min(Math.max(siblings.indexOf(el), 0), 5) * 90;
+      const rule = el.classList.contains('bigfig-rule');
+      const frames: Keyframe[] = gentle
+        ? [{ opacity: 0 }, { opacity: 1 }]
+        : rule
+          ? [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }]
+          : [{ opacity: 0, transform: 'translateY(40px)' }, { opacity: 1, transform: 'none' }];
+      el.animate(frames, {
+        duration: gentle ? 400 : rule ? 900 : 700,
+        delay: rule && !gentle ? delay + 250 : delay,
+        easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        fill: 'backwards',
+      });
+    };
+
+    // Only what is still below the screen animates; what the reader can
+    // already see stays put.
+    const seen = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        play(entry.target as HTMLElement);
+        seen.unobserve(entry.target);
+      }
+    }, { rootMargin: '0px 0px 8% 0px' });
+    const fold = window.innerHeight;
+    items.forEach((el) => {
+      if (el.getBoundingClientRect().top > fold) seen.observe(el);
+    });
+    return () => seen.disconnect();
+  }, [root, pathname]);
+}
+
 /** The whole page, on the theme's block. */
 export function SitePage({ children }: { children: React.ReactNode }) {
-  return <div className="site">{children}</div>;
+  const root = useRef<HTMLDivElement>(null);
+  useReveal(root);
+  return <div ref={root} className="site">{children}</div>;
 }
 
 export function SiteNav() {

@@ -118,10 +118,6 @@ export function Landing() {
             Upload your rubric and start writing. RubricMate shows what you have completed,
             what still needs work, and what to fix next.
           </p>
-          {/* The one line that tells a technical reader what they are looking at. */}
-          <p className="text-xs text-[#5f6368] mt-4">
-            React · TypeScript · Tailwind · Claude API · Vercel functions · parsing in the browser
-          </p>
         </motion.div>
       </header>
 

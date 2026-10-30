@@ -28,9 +28,11 @@ const INK = 'var(--reel-ink)';
 const MUTED = 'var(--reel-muted)';
 
 /** Scene boundaries in ms. One clock, everything derived from it. */
-const DROP = 0;
-const READ = 1300;
-const LIST = 2600;
+const ADROP = 0;
+const A_IN = 1100;
+const DROP = 1500;
+const READ = 2300;
+const LIST = 3300;
 const TYPE = 4200;
 const CHECK = 8400;
 const SCORE = 9600;
@@ -41,10 +43,11 @@ const DONE = 17800;
 const LOOP = 21600;
 
 const CAPTIONS: [number, string][] = [
+  [ADROP, 'Drop your assignment'],
   [DROP, 'Add the rubric'],
   [READ, 'It reads the rubric'],
-  [LIST, 'You get a checklist'],
-  [TYPE, 'Drop or write your assignment. Words and sources tick off'],
+  [LIST, 'You get a checklist, already counting'],
+  [TYPE, 'Keep writing. Words and sources tick off'],
   [CHECK, 'The AI reads the rest'],
   [SCORE, 'A score and a reason for each line'],
   [NEXT, 'And one thing to do next'],
@@ -73,6 +76,10 @@ const [TITLE, ...REST] = SAMPLE_DRAFT.split('\n\n');
 const BODY = REST.join(' ');
 const FIRST = BODY.slice(0, 520);
 const SECOND = BODY.slice(520, 900);
+
+/** How much of the draft the dropped file already holds, cut on a word. */
+const OPENED = 0.25;
+const OPEN_TEXT = FIRST.slice(0, FIRST.lastIndexOf(' ', Math.round(FIRST.length * OPENED)));
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 const pct = (have: number, need: number) => Math.min(100, Math.round((have / need) * 100));
@@ -145,22 +152,25 @@ export function DemoReel() {
 
   // The counters. These are the half of the rubric the browser can settle on
   // its own, so they move while the typing is still happening.
+  // The dropped assignment arrives already part written, so the counts start
+  // from what it holds and climb as the rest is typed.
+  const share = t < A_IN ? 0 : t < TYPE ? OPENED : OPENED + (1 - OPENED) * typed;
   const words =
-    t < TYPE ? 0
-      : t < FIX ? Math.round(DRAFT_WORDS * typed)
-        : Math.round(DRAFT_WORDS + (FINAL_WORDS - DRAFT_WORDS) * rewritten);
+    t < FIX ? Math.round(DRAFT_WORDS * share)
+      : Math.round(DRAFT_WORDS + (FINAL_WORDS - DRAFT_WORDS) * rewritten);
   const sources =
-    t < TYPE ? 0
-      : t < FIX ? Math.min(3, Math.floor(typed * 3.6))
+    t < A_IN ? 0
+      : t < FIX ? Math.max(1, Math.min(3, Math.floor(share * 3.6)))
         : rewritten > 0.5 ? 4 : 3;
 
   const text =
-    t < TYPE ? ''
-      : t < FIX ? FIRST.slice(0, Math.round(FIRST.length * typed))
-        : FIRST + SECOND.slice(0, Math.round(SECOND.length * rewritten));
+    t < A_IN ? ''
+      : t < TYPE ? OPEN_TEXT
+        : t < FIX ? FIRST.slice(0, OPEN_TEXT.length + Math.round((FIRST.length - OPEN_TEXT.length) * typed))
+          : FIRST + SECOND.slice(0, Math.round(SECOND.length * rewritten));
 
   const counted = (have: number, need: number, noun: string): View => ({
-    lit: t >= TYPE,
+    lit: t >= LIST,
     status: have >= need ? 'done' : have === 0 ? 'missing' : 'in_progress',
     detail: `${have.toLocaleString()} of ${need.toLocaleString()} ${noun}`,
     percent: pct(have, need),
@@ -206,7 +216,7 @@ export function DemoReel() {
           <div className="flex-1 bg-[var(--reel-canvas)] p-5 overflow-hidden">
             <div className="bg-[var(--reel-surface)] rounded-lg shadow-sm h-full px-7 py-5 overflow-hidden">
               <div className="flex items-center justify-between border-b border-[var(--reel-line-3)] pb-2 mb-4">
-                <span className="text-[10px] text-[var(--reel-muted)]">Untitled document</span>
+                <span className="text-[10px] text-[var(--reel-muted)]">{t >= A_IN ? 'HIST-201-essay' : 'Untitled document'}</span>
                 <span
                   className="flex items-center gap-1 text-[10px] transition-colors duration-300"
                   style={{ color: writing ? INK : MUTED }}
@@ -217,7 +227,7 @@ export function DemoReel() {
                 </span>
               </div>
 
-              {t >= TYPE ? (
+              {t >= A_IN ? (
                 <>
                   <p className="text-[11px] mb-2" style={{ color: INK }}>{TITLE}</p>
                   <p className="text-[10px] leading-[1.7]" style={{ color: MUTED }}>
@@ -255,7 +265,7 @@ export function DemoReel() {
               {!listed ? (
                 <div
                   className={`rounded-xl border-2 border-dashed p-6 flex flex-col items-center gap-2 transition-colors duration-300 ${
-                    t >= 650 && t < READ ? 'border-[var(--reel-blue)] bg-[var(--reel-blue-wash)]' : 'border-[var(--reel-line-2)] bg-[var(--reel-canvas)]'
+                    t >= DROP + 650 && t < READ ? 'border-[var(--reel-blue)] bg-[var(--reel-blue-wash)]' : 'border-[var(--reel-line-2)] bg-[var(--reel-canvas)]'
                   }`}
                 >
                   <div className="w-9 h-9 rounded-full bg-[var(--reel-surface)] flex items-center justify-center">
@@ -370,12 +380,29 @@ export function DemoReel() {
           {/* The file being dragged in. Mounted only for its scene, so it
               replays itself on every loop without any bookkeeping. */}
           <AnimatePresence>
+            {!still && between(ADROP, A_IN) && (
+              <motion.div
+                initial={{ opacity: 0, x: -120, y: -40, scale: 0.9, rotate: -8 }}
+                animate={{ opacity: [0, 1, 1, 0], x: 0, y: 0, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.0, ease: 'easeInOut', times: [0, 0.2, 0.8, 1] }}
+                className="absolute top-[150px] left-[260px] pointer-events-none"
+              >
+                <div className="bg-[var(--reel-surface)] rounded-lg border border-[var(--reel-line)] px-3 py-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4" style={{ color: BLUE }} />
+                  <span className="text-[10px]" style={{ color: INK }}>HIST-201-essay.docx</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
             {!still && between(DROP, READ) && (
               <motion.div
                 initial={{ opacity: 0, x: -120, y: -40, scale: 0.9, rotate: -8 }}
                 animate={{ opacity: [0, 1, 1, 0], x: 0, y: 0, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.2, 0.8, 1] }}
+                transition={{ duration: 0.8, ease: 'easeInOut', times: [0, 0.2, 0.8, 1] }}
                 className="absolute top-[96px] right-[150px] pointer-events-none"
               >
                 <div className="bg-[var(--reel-surface)] rounded-lg border border-[var(--reel-line)] px-3 py-2 flex items-center gap-2">

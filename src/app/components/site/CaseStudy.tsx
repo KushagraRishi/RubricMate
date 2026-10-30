@@ -352,3 +352,72 @@ export function WhatIsNext() {
     </Group>
   );
 }
+
+/* ------------------------------------------------- landing page, visual */
+
+/** The saving as one number, because that is the whole point of the chart. */
+export function SavingsCallout() {
+  return (
+    <motion.div
+      className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 px-6 py-6 flex items-center gap-6"
+      initial={{ opacity: 0, transform: 'translateY(10px)' }}
+      whileInView={{ opacity: 1, transform: 'translateY(0px)' }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.45, ease: EASE }}
+    >
+      <span className="text-5xl leading-none tabular-nums" style={{ color: BLUE }}>80%</span>
+      <p className="text-sm" style={{ color: INK }}>
+        cheaper per session. The model that does the marking never changed.
+      </p>
+    </motion.div>
+  );
+}
+
+const CHIPS = [
+  'React', 'TypeScript', 'Vite', 'Tailwind', 'Radix UI',
+  'Claude API', 'Zod', 'Vercel',
+];
+
+/** Names only. The reasoning for each lives on the write-up page. */
+export function StackChips() {
+  return (
+    <Group className="flex flex-wrap gap-2">
+      {CHIPS.map((name) => (
+        <motion.span
+          key={name}
+          variants={item}
+          className="rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm"
+          style={{ color: INK }}
+        >
+          {name}
+        </motion.span>
+      ))}
+    </Group>
+  );
+}
+
+const DEEPER = [
+  { to: '/about', title: 'How it was built', body: 'Decisions, request flow, challenges.' },
+  { to: '/privacy', title: 'Privacy and limits', body: 'What is kept, and what it will not do.' },
+];
+
+/** Where the long text went. Cards, so it reads as a place to go, not a footnote. */
+export function GoDeeper({ link }: { link: React.ComponentType<any> }) {
+  const Link = link;
+  return (
+    <Group className="grid sm:grid-cols-2 gap-3">
+      {DEEPER.map(({ to, title, body }) => (
+        <motion.div key={to} variants={item}>
+          <Link
+            to={to}
+            className="block rounded-xl border border-gray-200 bg-white p-5 hover:border-[#4285F4] transition-colors"
+          >
+            <p className="text-sm mb-1" style={{ color: INK }}>{title}</p>
+            <p className="text-xs mb-3" style={{ color: MUTED }}>{body}</p>
+            <span className="text-xs" style={{ color: BLUE }}>Read more</span>
+          </Link>
+        </motion.div>
+      ))}
+    </Group>
+  );
+}

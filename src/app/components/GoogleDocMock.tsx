@@ -9,7 +9,9 @@ import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { FileText as FileCount } from 'lucide-react';
+import { toast } from 'sonner';
 import { SAMPLE_DRAFT } from '../lib/samples';
+import { readImageFile, isHeic, ImageProblem } from '../lib/readImage';
 import { exportPdf, exportWordDoc, exportPlainText } from '../lib/exportDoc';
 
 interface Props {
@@ -52,6 +54,7 @@ const HIGHLIGHTS = [
 export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
   const editor = useRef<HTMLDivElement>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const savedRange = useRef<Range | null>(null);
   const [title, setTitle] = useState('Untitled document');
   const [spacing, setSpacing] = useState([1.5]);
 
@@ -120,15 +123,45 @@ export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
     sync();
   };
 
-  const insertImage = (file: File | undefined) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      editor.current?.focus();
-      document.execCommand('insertImage', false, String(reader.result));
+  /**
+   * Opening the file picker takes focus off the page, and converting a photo
+   * can take a second or two on top of that, so where the caret was has to be
+   * remembered from the moment the button was pressed.
+   */
+  const rememberCaret = () => {
+    const selection = window.getSelection();
+    const inside = selection?.anchorNode && editor.current?.contains(selection.anchorNode);
+    savedRange.current = selection && selection.rangeCount && inside
+      ? selection.getRangeAt(0).cloneRange()
+      : null;
+  };
+
+  const restoreCaret = () => {
+    editor.current?.focus();
+    const range = savedRange.current;
+    if (!range) return;
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  };
+
+  const insertImage = async (file: File | undefined) => {
+    if (!file) return;
+    // Only the HEIC path is slow enough to be worth saying anything about.
+    const waiting = isHeic(file) ? toast.loading('Converting your photo…') : null;
+    try {
+      const url = await readImageFile(file);
+      if (waiting) toast.dismiss(waiting);
+      restoreCaret();
+      document.execCommand('insertImage', false, url);
       sync();
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      const message = error instanceof ImageProblem
+        ? error.message
+        : 'Could not add that image.';
+      if (waiting) toast.error(message, { id: waiting });
+      else toast.error(message);
+    }
   };
 
   /**
@@ -307,11 +340,15 @@ export function GoogleDocMock({ draft, onDraftChange, count }: Props) {
             <input
               ref={picker}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               className="hidden"
               onChange={(e) => { insertImage(e.target.files?.[0]); e.target.value = ''; }}
             />
-            <button className={tool} onClick={() => picker.current?.click()} title="Insert image">
+            <button
+              className={tool}
+              onClick={() => { rememberCaret(); picker.current?.click(); }}
+              title="Insert image"
+            >
               <ImagePlus className="w-4 h-4" />
             </button>
 

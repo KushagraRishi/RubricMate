@@ -6,6 +6,7 @@ import { GoogleDocMock } from '../components/GoogleDocMock';
 import { RubricMateSidebar } from '../components/RubricMateSidebar';
 import { ChatDrawer } from '../components/ChatDrawer';
 import { useRubricMate } from '../lib/useRubricMate';
+import { Toaster } from 'sonner';
 
 const STEP_LABEL = {
   upload: 'Load a rubric to start',
@@ -98,6 +99,8 @@ export function Demo() {
         >
           <MessageCircle className="w-6 h-6" />
         </Button>
+
+        <Toaster position="bottom-center" richColors closeButton />
 
         <ChatDrawer
           open={chatOpen}

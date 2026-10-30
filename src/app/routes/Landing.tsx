@@ -6,8 +6,8 @@ import { ProblemSolution, GoDeeper } from '../components/site/CaseStudy';
 import { SitePage, SiteNav, SiteFooter, Section } from '../components/site/Shell';
 
 const STEPS = [
-  { icon: Upload, title: 'Add your rubric', body: 'A PDF, a Word file, or paste it.' },
-  { icon: PenLine, title: 'Write your assignment', body: 'Counts move as you type.' },
+  { icon: Upload, title: 'Drop your assignment', body: 'A PDF, a Word file, or write it here.' },
+  { icon: PenLine, title: 'Add your rubric', body: 'It becomes your checklist.' },
   { icon: ListChecks, title: 'Check it', body: 'A score and a reason for each line.' },
 ];
 
@@ -21,7 +21,7 @@ export function Landing() {
         <div className="container hero__grid">
           <h1 className="hero__head rise">Know exactly what your assignment is missing</h1>
           <div className="hero__side rise rise--2">
-            <p className="lead">Write your assignment. See what is done, and what is not.</p>
+            <p className="lead">Drop your assignment. See what is done, and what is not.</p>
             <Link to="/demo" className="btn btn--primary">Try the demo</Link>
           </div>
         </div>

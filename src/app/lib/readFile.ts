@@ -1,6 +1,7 @@
 /**
- * Rubrics arrive as whatever the lecturer uploaded, so the file is turned into
- * plain text in the browser and only the text is sent on. The serverless
+ * Rubrics and assignments arrive as whatever the lecturer or the student
+ * saved, so the file is turned into plain text in the browser and only the
+ * text is sent on. The serverless
  * functions stay small and JSON-only, and a 10MB PDF never crosses the wire.
  */
 
@@ -8,7 +9,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 
 export class FileProblem extends Error {}
 
-export async function readRubricFile(file: File): Promise<string> {
+export async function readDocumentFile(file: File): Promise<string> {
   if (file.size > MAX_BYTES) {
     throw new FileProblem('That file is over 10MB. Try a smaller one, or paste the text.');
   }
@@ -61,3 +62,6 @@ export async function readRubricFile(file: File): Promise<string> {
 
   throw new FileProblem('Use a PDF, a Word file, or plain text.');
 }
+
+/** The sidebar's name for it, from before assignments could be opened too. */
+export const readRubricFile = readDocumentFile;
